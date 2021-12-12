@@ -1,0 +1,18 @@
+{
+    "cmake.generator": "Unix Makefiles",
+    "cmake.configureOnOpen": true,
+    "files.associations": {
+        "cstdlib": "c",
+        "webgl2.h": "c",
+        "__split_buffer": "c",
+        "string": "c",
+        "vector": "c",
+        "__hash_table": "c",
+        "array": "c",
+        "initializer_list": "c",
+        "iterator": "c",
+        "string_view": "c",
+        "unordered_map": "c",
+        "utility": "c"
+    }
+}

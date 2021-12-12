@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body>
+	
+		<canvas id="canvas" width="400" height="400"></canvas>
+			
+	</body>
+	<script type="text/javascript" src="build/wasmtest.js"></script>
+	<script>
+		var superActive = 0; 
+		var engine = {}
+		Module.onRuntimeInitialized = async _ => {
+			engine = {
+				setPlayerPos: Module.cwrap('js_setPlayerPos', 'void', ['number', 'number', 'number', 'number']),
+				setPlayerActive: Module.cwrap('js_setPlayerActive', 'void', ['number', 'number']),
+				setMePlayer: Module.cwrap('js_setMePlayer', 'void', ['number']),
+			};
+			
+
+			
+			
+		};
+		
+		var x = 0
+		var z = 0;
+		document.addEventListener('keydown', function (event) {
+				if (event.keyCode === 87) { //w
+					z-= 0.1;
+				} else if (event.keyCode === 83) { //s
+					z+= 0.1
+				}
+				// Separate them here
+				if (event.keyCode === 65) { //arrow_up
+					x -= 0.1;
+				} else if (event.keyCode === 68) { //arrow_down
+					x += 0.1;
+				}
+		});
+		function drawFrame() {
+			if(superActive)
+			{
+				engine.setPlayerPos(0, x,0,z);
+
+				engine.setPlayerActive(1, 1);
+				engine.setPlayerPos(1, 0,0,-1);
+				
+			}			
+			window.requestAnimationFrame(drawFrame)
+		}
+		drawFrame()
+	</script>
+  </head>
+</html>

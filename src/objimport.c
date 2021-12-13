@@ -180,7 +180,7 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 			// Texture Coord
 			vec2 t = { 0,0 };
 			t.x = strtod(c, &c);
-			t.y = strtod(c, &c);
+			t.y = 1.0f - strtod(c, &c);
 
 			pushLinkedItem(&texcoords, &t);
 

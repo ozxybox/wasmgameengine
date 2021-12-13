@@ -7,6 +7,8 @@
 #include "texture.h"
 #include "prop.h"
 #include "camera.h"
+#include "primitives.h"
+
 
 static camera_t s_cam;
     
@@ -169,41 +171,15 @@ void js_drawAllProps()
     drawAllProps();
 }
 
-/*
-
-#include <emscripten.h>
-#include <emscripten/html5.h>
-
-#include <math.h>
-
-#define WIDTH 1024
-#define HEIGHT 768
-
-static prop_t s_prop;
-// Per-frame animation tick.
-int draw_frame(double t, void * p)
+// Primitives
+EMSCRIPTEN_KEEPALIVE
+mesh_t js_cubeMesh()
 {
-    js_frame();
-
-    float s = t / 1000.0;
-
-    // Camera
-    js_setCameraOrigin(2*sinf(s), 0, 2*cosf(s));
-    js_setCameraRotation(0, -s, 0);
-    js_applyCamera();
-
-    js_drawAllProps();
-
-    return 1;
+    return cubeMesh();
 }
 
-int main()
+EMSCRIPTEN_KEEPALIVE
+mesh_t js_skyMesh()
 {
-    js_init("canvas", WIDTH, HEIGHT);
-    s_prop = js_createProp();
-    js_setPropInfo(s_prop, 0,0,0);
-
-    emscripten_request_animation_frame_loop(&draw_frame, 0);
-    return 1;
+    return skyMesh();
 }
-*/

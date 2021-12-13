@@ -16,7 +16,7 @@ void transformMatrix(transform_t* transform, mat4x4* matrix)
     scale4x4v4(&mat, &mat, &scale);
 
     rotateXYZ4x4(&rot, transform->rotation.x, transform->rotation.y, transform->rotation.z);
-    mul4x4(&mat, &mat, &rot);
+    mul4x4(&mat, &rot, &mat);
     
     // Translate
     mat.d = (vec4){transform->origin.x, transform->origin.y, transform->origin.z, 1};

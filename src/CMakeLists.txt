@@ -51,10 +51,10 @@ set( SOURCES
 
 	binding.c
 
-	main.c
 )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 add_executable( wasmtest ${SOURCES} )
 target_include_directories( wasmtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries( wasmtest lodepng )
+em_link_post_js(wasmtest binding.js)

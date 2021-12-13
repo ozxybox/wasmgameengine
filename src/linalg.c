@@ -104,9 +104,9 @@ void rotateXYZ4x4(mat4x4* out, float x, float y, float z)
     mat4x4 mat, rot;
     rotateXAxis4x4(&mat, x); // Pitch
     rotateYAxis4x4(&rot, y); // Yaw
-    mul4x4(&mat, &mat, &rot);
+    mul4x4(&mat, &rot, &mat);
     rotateZAxis4x4(&rot, z); // Roll
-    mul4x4(&mat, &mat, &rot);
+    mul4x4(&mat, &rot, &mat);
     *out = mat;
 }
 // Vector functions

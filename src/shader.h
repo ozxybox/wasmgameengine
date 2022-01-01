@@ -14,11 +14,14 @@ enum SHADER_UNIFORM
 #define SHADER_INVALID_INDEX 0xFFFFFFFF 
 typedef unsigned int shader_t;
 
-shader_t createShader(const char* vs, const char* fs);
-shader_t emptyShader();
-void loadIntoShader(shader_t empty, const char* vs, const char* fs);
+void shader_systemInit();
+void shader_systemShutdown();
 
-void bindShader(shader_t shader);
-void setUniform(int uniform, void* data);
+shader_t shader_create(const char* vs, const char* fs);
+shader_t shader_empty();
+void shader_delete(shader_t shader);
+void shader_loadInto(shader_t empty, const char* vs, const char* fs);
 
-void shaderSystemInit();
+void shader_bind(shader_t shader);
+void shader_set(int uniform, void* data);
+

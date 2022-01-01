@@ -137,10 +137,10 @@ static unsigned short s_skyIbo[] =
 static mesh_t s_primCubeMesh = MESH_INVALID_INDEX;
 static mesh_t s_primSkyMesh = MESH_INVALID_INDEX;
 
-void primitiveSystemInit()
+void primitive_systemInit()
 {
-    s_primCubeMesh = loadMeshFromArray(s_cubeVbo, sizeof(s_cubeVbo) / sizeof(vertex_t), s_cubeIbo, sizeof(s_cubeIbo) / sizeof(unsigned short));
-    s_primSkyMesh = loadMeshFromArray(s_skyVbo, sizeof(s_skyVbo) / sizeof(vertex_t), s_skyIbo, sizeof(s_skyIbo) / sizeof(unsigned short));
+    s_primCubeMesh = mesh_loadFromArray(s_cubeVbo, sizeof(s_cubeVbo) / sizeof(vertex_t), s_cubeIbo, sizeof(s_cubeIbo) / sizeof(unsigned short));
+    s_primSkyMesh = mesh_loadFromArray(s_skyVbo, sizeof(s_skyVbo) / sizeof(vertex_t), s_skyIbo, sizeof(s_skyIbo) / sizeof(unsigned short));
 
 }
 
@@ -154,10 +154,6 @@ mesh_t skyMesh()
     return s_primSkyMesh;
 }
 
-mesh_t errorMesh()
-{
-    return s_primCubeMesh;
-}
 
 
 /*
@@ -170,3 +166,4 @@ mesh_t errorMesh()
        1, 1, 0,  1, 0
         };
 */
+

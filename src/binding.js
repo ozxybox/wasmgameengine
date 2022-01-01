@@ -8,38 +8,59 @@ function bindEngine() {
         frame: Module.cwrap('js_frame', 'void', []),
 
         // Asset system
-        preloadMesh: Module.cwrap('js_preloadMesh', 'number', ['string']), // Path
-        preloadTexture: Module.cwrap('js_preloadTexture', 'number', ['string']), // Path
-        preloadShader: Module.cwrap('js_preloadShader', 'number', ['string']), // Path
+        asset_preload: Module.cwrap('js_asset_preload', 'number', ['number', 'string']), // Class, Path
+        asset_incref: Module.cwrap('js_asset_incref', 'void', ['number']), // asset_t*
+        asset_decref: Module.cwrap('js_asset_decref', 'void', ['number']), // asset_t*
+        asset_indexof: Module.cwrap('js_asset_indexof', 'number', ['number']), // asset_t*
+        asset_atindex: Module.cwrap('js_asset_atindex', 'number', ['number']), // assetIndex_t
+        asset_data: Module.cwrap('js_asset_data', 'number', ['number']), // asset_t*
+        //mesh_preload: Module.cwrap('js_mesh_preload', 'number', ['string']), // Path
+        //texture_preload: Module.cwrap('js_texture_preload', 'number', ['string']), // Path
+        //shader_preload: Module.cwrap('js_shader_preload', 'number', ['string']), // Path
 
         // Camera system
-        setCameraOrigin: Module.cwrap('js_setCameraOrigin', 'void', ['number', 'number', 'number']),
-        setCameraRotation: Module.cwrap('js_setCameraRotation', 'void', ['number', 'number', 'number']),
-        applyCamera: Module.cwrap('js_applyCamera', 'void', []),
+        camera_setOrigin: Module.cwrap('js_camera_setOrigin', 'void', ['number', 'number', 'number']),
+        camera_setRotation: Module.cwrap('js_camera_setRotation', 'void', ['number', 'number', 'number']),
+        camera_apply: Module.cwrap('js_camera_apply', 'void', []),
 
         // Shader System
-        setSunDir: Module.cwrap('js_setSunDir', 'void', ['number', 'number', 'number']),
-        setSunColor: Module.cwrap('js_setSunColor', 'void', ['number', 'number', 'number', 'number']),
+        sun_setDir: Module.cwrap('js_sun_setDir', 'void', ['number', 'number', 'number']),
+        sun_setColor: Module.cwrap('js_sun_setColor', 'void', ['number', 'number', 'number', 'number']),
 
         // Prop System
-        createProp: Module.cwrap('js_createProp', 'number', []),
-        deleteProp: Module.cwrap('js_deleteProp', 'void', ['number']),
-        deleteAllProps: Module.cwrap('js_deleteAllProps', 'void', []),
-        setPropInfo: Module.cwrap('js_setPropInfo', 'void', ['number', 'number', 'number', 'number']),
-        setPropOrigin: Module.cwrap('js_setPropOrigin', 'void', ['number', 'number', 'number', 'number']),
-        setPropRotation: Module.cwrap('js_setPropRotation', 'void', ['number', 'number', 'number', 'number']),
-        setPropScale: Module.cwrap('js_setPropScale', 'void', ['number', 'number', 'number', 'number']),
-        setPropVisible: Module.cwrap('js_setPropVisible', 'void', ['number', 'number']),
-        getPropVisible: Module.cwrap('js_getPropVisible', 'number', ['number']),
-        propCount: Module.cwrap('js_propCount', 'number', []),
-        drawProp: Module.cwrap('js_drawProp', 'void', ['number']),
-        drawAllProps: Module.cwrap('js_drawAllProps', 'void', []),
+        prop_create: Module.cwrap('js_prop_create', 'number', []),
+        prop_delete: Module.cwrap('js_prop_delete', 'void', ['number']),
+        prop_deleteAll: Module.cwrap('js_prop_deleteAll', 'void', []),
+        prop_setInfo: Module.cwrap('js_prop_setInfo', 'void', ['number', 'number', 'number', 'number']),
+        prop_setOrigin: Module.cwrap('js_prop_setOrigin', 'void', ['number', 'number', 'number', 'number']),
+        prop_setRotation: Module.cwrap('js_prop_setRotation', 'void', ['number', 'number', 'number', 'number']),
+        prop_setScale: Module.cwrap('js_prop_setScale', 'void', ['number', 'number', 'number', 'number']),
+        prop_setVisible: Module.cwrap('js_prop_setVisible', 'void', ['number', 'number']),
+        prop_getVisible: Module.cwrap('js_prop_getVisible', 'number', ['number']),
+        prop_count: Module.cwrap('js_prop_count', 'number', []),
+        prop_draw: Module.cwrap('js_prop_draw', 'void', ['number']),
+        prop_drawAll: Module.cwrap('js_prop_drawAll', 'void', []),
 
         // Primitives
         cubeMesh: Module.cwrap('js_cubeMesh', 'number', []),
         skyMesh: Module.cwrap('js_skyMesh', 'number', []),
+
+        // Texture System
+        texture_incRef: Module.cwrap('js_texture_incRef', 'void', ['number']),
+        texture_decRef: Module.cwrap('js_texture_decRef', 'void', ['number']),
+
+        terrainTest: Module.cwrap('js_terrainTest', 'number', []),
+        castDown: Module.cwrap('js_castDown', 'number', ['number','number','number']),
+
+        
     };
     engine = Module["_enginebinding"];
+    engine.ASSET_CLASS_NONE = 0
+    engine.ASSET_CLASS_TEXTURE = 1 
+    engine.ASSET_CLASS_MODEL = 2
+    //engine.ASSET_CLASS_SOUND = 2
+    engine.ASSET_CLASS_SHADER = 3
+    
     console.log("Engine Bound!")
 }
 
@@ -63,18 +84,77 @@ class transform_t {
 */
 class prop_t {
     constructor() {
-        this.id = engine.createProp();
+        this.id = engine.prop_create();
+        
+        this.mesh    = undefined;
+        this.texture = undefined;
+        this.shader  = undefined;
     }
     setOrigin(x, y, z) {
-        engine.setPropOrigin(this.id, x, y, z);
+        engine.prop_setOrigin(this.id, x, y, z);
     }
     setScale(w, h, d) {
-        engine.setPropScale(this.id, w, h, d);
+        engine.prop_setScale(this.id, w, h, d);
     }
     setRotation(p, y, r) {
-        engine.setPropRotation(this.id, p, y, r);
+        engine.prop_setRotation(this.id, p, y, r);
     }
     setInfo(mesh, texture, shader) {
-        engine.setPropInfo(this.id, mesh, texture, shader);
+        engine.prop_setInfo(this.id, mesh.id, texture.id, shader.id);
+
+        mesh.incRef();
+        texture.incRef();
+        shader.incRef();
+
+        this.mesh = mesh;
+        this.texture = texture;
+        this.shader = shader;
     }
+    delete()
+    {
+        if(!(this.mesh === undefined))
+            this.mesh.decRef();
+            
+        if(!(this.texture === undefined))
+            this.texture.decRef();
+        
+        if(!(this.shader === undefined))
+            this.shader.decRef();
+
+        engine.prop_delete(this.id);
+    }
+}
+
+class model_t // This is technically a mesh_t for now!
+{
+    constructor(path) {
+        var a = engine.asset_preload(engine.ASSET_CLASS_MODEL, path);
+        this.id = engine.asset_data(a);
+        this.asset = engine.asset_indexof(a);
+    }
+    incRef() { engine.asset_incref(engine.asset_atindex(this.asset)); }
+    decRef() { engine.asset_decref(engine.asset_atindex(this.asset)); }
+}
+
+
+class texture_t
+{
+    constructor(path) {
+        var a = engine.asset_preload(engine.ASSET_CLASS_TEXTURE, path);
+        this.id = engine.asset_data(a);
+        this.asset = engine.asset_indexof(a);
+    }
+    incRef() { engine.asset_incref(engine.asset_atindex(this.asset)); }
+    decRef() { engine.asset_decref(engine.asset_atindex(this.asset)); }
+}
+
+class shader_t
+{
+    constructor(path) {
+        var a = engine.asset_preload(engine.ASSET_CLASS_SHADER, path);
+        this.id = engine.asset_data(a);
+        this.asset = engine.asset_indexof(a);
+    }
+    incRef() { engine.asset_incref(engine.asset_atindex(this.asset)); }
+    decRef() { engine.asset_decref(engine.asset_atindex(this.asset)); }
 }

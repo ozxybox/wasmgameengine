@@ -43,11 +43,11 @@ void initGL(const char* canvas, int width, int height)
     pixelHeight = 2.f / height;
 
     // Systems Init
-    preloadSystemInit();
-    meshSystemInit();
-    primitiveSystemInit();
-    textureSystemInit();
-    shaderSystemInit();
+    asset_systemInit();
+    mesh_systemInit();
+    primitive_systemInit();
+    texture_systemInit();
+    shader_systemInit();
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE); 

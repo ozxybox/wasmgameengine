@@ -1,6 +1,8 @@
 #include "shader.h"
 #include "linalg.h"
 #include "log.h"
+#include "map.h"
+#include "linkedlist.h"
 #include <ogl.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -71,29 +73,33 @@ static uniformLayoutInfo_t s_uniformLayout[] = {
 
 #define UNIFORM_COUNT (sizeof(s_uniformLayout)/sizeof(uniformLayoutInfo_t))
 
-static uniformData_t s_uniformData;
-
 typedef struct {
+    shader_t id;
+
     GLuint program;
     
     GLuint uniforms[UNIFORM_COUNT];
 } shaderInfo_t;
 
-#define MAX_SHADERS 16
-static shaderInfo_t s_shaders[MAX_SHADERS]; 
-static unsigned int s_shaderCount = 0;
-static shader_t s_currentShader = SHADER_INVALID_INDEX;
+static uniformData_t s_uniformData;
+
+static map_t s_shaderMap;
+static linklist_t s_shaderList;
+static shader_t s_shaderId;
+
+static shaderInfo_t* s_currentShader = 0;
+static shaderInfo_t* s_errorShader = 0;
 
 
-void checkError(GLuint shader)
+static void checkError(GLuint shader)
 {
-    int InfoLogLength = 0;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &InfoLogLength);
-    if (InfoLogLength > 0)
+    int infoLogLength = 0;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+    if (infoLogLength > 0)
     {
         char vertexError[1024];
-        glGetShaderInfoLog(shader, InfoLogLength, NULL, &vertexError[0]);
-        logError(vertexError);
+        glGetShaderInfoLog(shader, infoLogLength, NULL, &vertexError[0]);
+        logError("[shader] Error:\n%s", vertexError);
     }
 }
 
@@ -106,7 +112,7 @@ static GLuint compileShader(GLenum shaderType, const char *src)
     return shader;
 }
 
-static shaderInfo_t createProgram(GLuint vertexShader, GLuint fragmentShader)
+static void createProgram(shaderInfo_t* info, GLuint vertexShader, GLuint fragmentShader)
 {
     GLuint program = glCreateProgram();
     glAttachShader(program, vertexShader);
@@ -117,62 +123,109 @@ static shaderInfo_t createProgram(GLuint vertexShader, GLuint fragmentShader)
     glLinkProgram(program);
     //checkError(program);
     
-    shaderInfo_t info;
-    info.program = program;
+    info->program = program;
 
     //colorPos = glGetUniformLocation(program, "color");
     
     // Get all uniforms for this shader
     for(int i = 0; i < sizeof(s_uniformLayout) / sizeof(uniformLayoutInfo_t); i++)
-        info.uniforms[i] = glGetUniformLocation(program, s_uniformLayout[i].name);
+        info->uniforms[i] = glGetUniformLocation(program, s_uniformLayout[i].name);
+}
 
 
+static shaderInfo_t* newShaderInfo()
+{
+    // Get a new key id
+    unsigned int k = s_shaderId;
+    s_shaderId++;
+
+    // Make space for a shader on the list
+    shaderInfo_t m;
+    linkitem_t* li = ll_push(&s_shaderList, &m);
+    void* dat = ll_access(li);
+
+    // Place it in the map
+    map_set(&s_shaderMap, k, dat);
+
+    // Setup the data
+    memset(dat, GL_INVALID_INDEX, sizeof(shaderInfo_t));
+    shaderInfo_t* info = (shaderInfo_t*)dat;
+    info->id = k;
+
+    // Pass back the shader
     return info;
 }
 
-shaderInfo_t* newShaderInfo()
+static int shaderInfoFromId(shader_t shader, shaderInfo_t** out)
 {
-    shaderInfo_t* info = &s_shaders[s_shaderCount];
-    s_shaderCount++;
-    return info;
+    // Pull in our data from our id
+    shaderInfo_t* dat;
+    if(map_get(&s_shaderMap, shader, (void**)&dat))
+    {
+        if(out) *out = dat;
+        return 1;
+    }
+    else
+    {
+        // FIXME: Too annyoing //logError("[shader] (%u) does not exist!", shader);
+        
+        if(out) *out = s_errorShader;
+        return 0;
+    }
 }
 
-shader_t emptyShader()
-{
-    shaderInfo_t* info = newShaderInfo();
-    info->program = GL_INVALID_INDEX;
-    return info - &s_shaders[0];
-}
-void loadIntoShader(shader_t empty, const char* vs, const char* fs)
-{
-    logMsg(vs);
-    logMsg(fs);
-    GLuint vertexShader   = compileShader(GL_VERTEX_SHADER, vs);
-    GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fs);
-    
-    shaderInfo_t* info = &s_shaders[empty];
-    *info = createProgram(vertexShader, fragmentShader);
-}
-shader_t createShader(const char* vs, const char* fs)
+static void loadIntoShader(shaderInfo_t* info, const char* vs, const char* fs)
 {
     GLuint vertexShader   = compileShader(GL_VERTEX_SHADER, vs);
     GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fs);
     
-    shaderInfo_t* info = newShaderInfo();
-    *info = createProgram(vertexShader, fragmentShader);
+    createProgram(info, vertexShader, fragmentShader);
 
-    return info - &s_shaders[0];
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+}
+
+shader_t shader_empty()
+{
+    shaderInfo_t* info = newShaderInfo();
+    return info->id;
+}
+
+void shader_delete(shader_t shader)
+{
+    shaderInfo_t* info;
+    if(map_get(&s_shaderMap, shader, (void**)&info))  
+    {
+        if(info->program != GL_INVALID_INDEX)
+            glDeleteProgram(info->program);
+        map_remove(&s_shaderMap, shader);
+        ll_remove(&s_shaderMap, ll_item(info));
+    }
+}
+
+void shader_loadInto(shader_t empty, const char* vs, const char* fs)
+{
+    shaderInfo_t* info;
+    if(!map_get(&s_shaderMap, empty, (void**)&info))
+        return;
+
+    loadIntoShader(info, vs, fs);
+}
+shader_t shader_create(const char* vs, const char* fs)
+{
+    shaderInfo_t* info = newShaderInfo();
+    loadIntoShader(info, vs, fs);
+
+    return info->id;
 }
 
 
 // Applies the uniform data to the shader
 void applyUniform(int idx)
 {
-    if(s_shaderCount == 0) return;
-    if(s_currentShader >= s_shaderCount) return;
+    if(!s_currentShader) return;
 
-    shaderInfo_t* shader = &s_shaders[s_currentShader];
-    GLuint uniform = ((GLuint*)&shader->uniforms)[idx];
+    GLuint uniform = s_currentShader->uniforms[idx];
     if(uniform == GL_INVALID_INDEX) return;
     
     void* mem = (char*)&s_uniformData + s_uniformLayout[idx].offset;
@@ -196,7 +249,7 @@ void applyUniform(int idx)
         break;
     }
 }
-void setUniform(int uniform, void* data)
+void shader_set(int uniform, void* data)
 {
     unsigned int size = s_uniformTypeSize[s_uniformLayout[uniform].type];
     void* mem = (char*)&s_uniformData + s_uniformLayout[uniform].offset;
@@ -211,19 +264,21 @@ void setAllUniforms()
         applyUniform(i);
 }
 
-void bindShader(shader_t shader)
+void shader_bind(shader_t shader)
 {    
-    if(s_shaderCount == 0) return;
-    if(s_currentShader >= s_shaderCount)
-        shader = 0;
+    shaderInfo_t* info = 0;
+    if(!map_get(&s_shaderMap, shader, &info))
+    {
+        // FIXME: Too annyoing //logError("[shader] (%u) does not exist!", shader);
+        info = s_errorShader;
+    }
 
-    shaderInfo_t* info = &s_shaders[shader];
     if(info->program == GL_INVALID_INDEX) 
     {
-        if(shader != 0) bindShader(0);
-        return;
+        if(info == s_errorShader) return;
+        info = s_errorShader;
     }
-    s_currentShader = shader;
+    s_currentShader = info;
 
     glUseProgram(info->program);
     setAllUniforms();
@@ -231,31 +286,31 @@ void bindShader(shader_t shader)
 }
 
 
-void shaderSystemInit()
+extern const char g_shaderErrorVS[];
+extern const char g_shaderErrorFS[];
+
+void shader_systemInit()
 {
-    // Load a default shader into position 0
-    static const char vs[] =
-    "attribute vec4 a_pos;"
-    "attribute vec4 a_norm;"
-    "attribute vec2 a_uv;"
-    "varying vec2 uv;"
-    "uniform mat4 u_model;"
-    "uniform mat4 u_view;"
-    "uniform mat4 u_projection;"
-    "void main(){"
-    "    uv=a_uv.xy;"
-    "    gl_Position = u_projection * u_view * u_model * a_pos;"
-    "}";
+    logInfo("[shader] System Init");
 
-    static const char fs[] =
-    "precision lowp float;"
-    "uniform sampler2D tex;"
-    "varying vec2 uv;"
-    "void main(){"
-    "    gl_FragColor=texture2D(tex,uv);"
-    "}";
+    s_shaderId = 0;
+    s_shaderMap = map_create();
+    s_shaderList = ll_create(sizeof(shaderInfo_t));
 
-    shader_t s = createShader(vs, fs);
+    // Load a default shader
+    s_errorShader = newShaderInfo();
+    loadIntoShader(s_errorShader, g_shaderErrorVS, g_shaderErrorFS);
+    s_currentShader = 0;
+}
+void shader_systemShutdown()
+{
+     logInfo("[shader] System Shutdown");
 
-    logInfo("Shader System Init %d", s);
+    // Clear out all GL data
+    for(linkitem_t* li = s_shaderList.first; li; li = li->next)
+        glDeleteProgram(((shaderInfo_t*)ll_access(li))->program);
+
+    // Clear out the lists
+    ll_clear(&s_shaderList);
+    map_clear(&s_shaderMap);
 }

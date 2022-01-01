@@ -1,7 +1,6 @@
 #pragma once
 #include "mesh.h"
 
-void primitiveSystemInit();
-mesh_t errorMesh();
+void primitive_systemInit();
 mesh_t cubeMesh();
 mesh_t skyMesh();

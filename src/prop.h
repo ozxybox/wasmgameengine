@@ -7,21 +7,21 @@
 #define PROP_INVALID_INDEX 0xFFFFFFFF 
 typedef unsigned int prop_t;
 
-prop_t createProp();
-void deleteProp(prop_t prop);
-void deleteAllProps();
+prop_t prop_create();
+void prop_delete(prop_t prop);
+void prop_deleteAll();
 
-void setPropInfo(prop_t prop, mesh_t mesh, texture_t texture, shader_t shader);
+void prop_setInfo(prop_t prop, mesh_t mesh, texture_t texture, shader_t shader);
 
-void setPropOrigin(prop_t prop, vec3 origin);
-void setPropRotation(prop_t prop, vec3 rotation);
-void setPropScale(prop_t prop, vec3 scale);
+void prop_setOrigin(prop_t prop, vec3 origin);
+void prop_setRotation(prop_t prop, vec3 rotation);
+void prop_setScale(prop_t prop, vec3 scale);
 
-vec3 getPropOrigin(prop_t prop);
+vec3 prop_getOrigin(prop_t prop);
 
-void setPropVisible(prop_t prop, int visible);
-int getPropVisible(prop_t prop);
+void prop_setVisible(prop_t prop, int visible);
+int prop_getVisible(prop_t prop);
 
-unsigned int propCount();
-void drawProp(prop_t prop);
-void drawAllProps();
+unsigned int prop_count();
+void prop_draw(prop_t prop);
+void prop_drawAll();

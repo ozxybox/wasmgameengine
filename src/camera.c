@@ -2,7 +2,7 @@
 #include "transform.h"
 #include "shader.h"
 
-void applyCamera(camera_t* cam)
+void camera_apply(camera_t* cam)
 {
     // View
     mat4x4 view, rot;
@@ -16,7 +16,7 @@ void applyCamera(camera_t* cam)
     perspective4x4(&proj, cam->fov, cam->near, cam->far, cam->aspect);
 
     // Set Uniforms
-    setUniform(SHADER_UNIFORM_VIEW, &view);
-    setUniform(SHADER_UNIFORM_PROJECTION, &proj);
-    setUniform(SHADER_UNIFORM_CAMERAPOS, &cam->origin);
+    shader_set(SHADER_UNIFORM_VIEW, &view);
+    shader_set(SHADER_UNIFORM_PROJECTION, &proj);
+    shader_set(SHADER_UNIFORM_CAMERAPOS, &cam->origin);
 }

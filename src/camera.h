@@ -12,4 +12,4 @@ typedef struct camera_t
     float aspect;
 } camera_t;
 
-void applyCamera(camera_t* cam);
+void camera_apply(camera_t* cam);

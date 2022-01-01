@@ -20,21 +20,30 @@ enum ASSET_STATUS
 };
 
 typedef struct asset_t {
+    char* name;
     int status;
-    int assetClass;
-    unsigned int data; // Will be in the format of the class type
+    int assetclass;
+    unsigned int id;
+    void* ainf;
+    unsigned int pos;
 } asset_t;
 
-// Begins async download
-asset_t* preloadAsset(int assetClass, const char* url);
+typedef unsigned int assetIndex_t;
 
-texture_t preloadTexture(const char* url);
+void asset_systemInit();
+void asset_systemThinkSlow();
+void asset_systemShutdown();
+
+// Begins async download
+asset_t* asset_preload(int assetClass, const char* url);
+
+void asset_incref(asset_t* asset);
+void asset_decref(asset_t* asset);
+
+assetIndex_t asset_indexof(asset_t* asset);
+asset_t* asset_atindex(assetIndex_t index);
 
 // Begins sync download
-asset_t* downloadAsset(int assetClass, const char* url);
+//asset_t* asset_download(int assetClass, const char* url);
 
-void deleteAsset(asset_t* asset);
-
-void preloadSystemInit();
-void preloadSystemProcess();
-void preloadSystemShutdown();
+//void asset_delete(asset_t* asset);

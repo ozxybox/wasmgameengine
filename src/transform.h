@@ -9,4 +9,4 @@ typedef struct transform_t
 } transform_t;
 
 transform_t transform();
-void transformMatrix(transform_t* transform, mat4x4* matrix); // Pitch, yaw, roll
+void transform_matrix(transform_t* transform, mat4x4* matrix); // Pitch, yaw, roll

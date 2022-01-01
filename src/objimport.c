@@ -32,7 +32,7 @@ int LoadMtlString(char* content, mtlfile_t* mtl)
 		return 0;
 
 
-	linklist_t mats = initLinkedList(sizeof(objmaterial_t));
+	linklist_t mats = ll_create(sizeof(objmaterial_t));
 
 	objmaterial_t mat;
 
@@ -47,7 +47,7 @@ int LoadMtlString(char* content, mtlfile_t* mtl)
 
 			if (mat.name.str)
 			{
-				pushLinkedItem(&mats, &mat);
+				ll_push(&mats, &mat);
 
 			}
 			memset(&mat, 0, sizeof(objmaterial_t));
@@ -138,11 +138,11 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 
 
 	// Yuck! Replace this with a linked block stack or something later?
-	linklist_t meshes = initLinkedList(sizeof(objmesh_t));
-	linklist_t faces = initLinkedList(sizeof(objface_t));
-	linklist_t norms = initLinkedList(sizeof(vec3));
-	linklist_t verts = initLinkedList(sizeof(vec3));
-	linklist_t texcoords = initLinkedList(sizeof(vec2));
+	linklist_t meshes = ll_create(sizeof(objmesh_t));
+	linklist_t faces = ll_create(sizeof(objface_t));
+	linklist_t norms = ll_create(sizeof(vec3));
+	linklist_t verts = ll_create(sizeof(vec3));
+	linklist_t texcoords = ll_create(sizeof(vec2));
 
 	objmesh_t curmesh = {{0,0}, 0, 0};
 
@@ -158,7 +158,7 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 			// New Group
 			if(currentgroup.)
 
-			pushLinkedItem(&norms, &n);
+			ll_push(&norms, &n);
 		}
 		else */
 		if (strncmp("vn ", c, 3) == 0)
@@ -171,7 +171,7 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 			n.y = strtod(c, &c);
 			n.z = strtod(c, &c);
 
-			pushLinkedItem(&norms, &n);
+			ll_push(&norms, &n);
 		}
 		else if (strncmp("vt ", c, 3) == 0)
 		{
@@ -182,7 +182,7 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 			t.x = strtod(c, &c);
 			t.y = 1.0f - strtod(c, &c);
 
-			pushLinkedItem(&texcoords, &t);
+			ll_push(&texcoords, &t);
 
 		}
 		else if (strncmp("v ", c, 2) == 0)
@@ -195,7 +195,7 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 			v.y = strtod(c, &c);
 			v.z = strtod(c, &c);
 
-			pushLinkedItem(&verts, &v);
+			ll_push(&verts, &v);
 		}
 		else if (*c == 'f')
 		{
@@ -203,7 +203,7 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 			// Parse the face til eol
 			c += 2;
 
-			linklist_t faceverts = initLinkedList(sizeof(objvert_t));
+			linklist_t faceverts = ll_create(sizeof(objvert_t));
 
 			while (c - buf < size)
 			{
@@ -221,7 +221,7 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 
 				objvert_t fv = {.vertex = vert - 1, .uv = text - 1, .normal = norm - 1}; 
 				
-				pushLinkedItem(&faceverts, &fv);
+				ll_push(&faceverts, &fv);
 			}
 			if (faceverts.count)
 			{
@@ -229,11 +229,11 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 				face.vertexCount = faceverts.count;
 				face.vertices = (objvert_t*)malloc(sizeof(objvert_t) * faceverts.count);
 				
-				copyLinkedListInto(face.vertices, &faceverts, sizeof(objvert_t) * faceverts.count);
+				ll_copyInto(face.vertices, &faceverts, sizeof(objvert_t) * faceverts.count);
 
-				pushLinkedItem(&faces, &face);
+				ll_push(&faces, &face);
 			}
-			clearLinkedList(&faceverts);
+			ll_clear(&faceverts);
 
 		}
 		else if (strncmp("mtllib ", c, 7) == 0)
@@ -254,7 +254,7 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 			if(fc > 0)
 			{
 				curmesh.faceCount = fc;
-				pushLinkedItem(&meshes, &curmesh);
+				ll_push(&meshes, &curmesh);
 			}
 			curmesh = (objmesh_t){{matname, len}, faces.count - curmesh.faceCount, faces.count};
 
@@ -270,28 +270,28 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 	if(meshfc > 0)
 	{
 		curmesh.faceCount = meshfc;
-		pushLinkedItem(&meshes, &curmesh);
+		ll_push(&meshes, &curmesh);
 	}
 
 	//out->faceCount = faces.count;
 	out->facepool = malloc(sizeof(objface_t) * faces.count);
-	copyLinkedListInto(out->facepool, &faces, faces.count * sizeof(objface_t));
+	ll_copyInto(out->facepool, &faces, faces.count * sizeof(objface_t));
 
 	out->normCount = norms.count;
 	out->norms = malloc(sizeof(vec3) *norms.count);
-	copyLinkedListInto(out->norms, &norms, norms.count * sizeof(vec3));
+	ll_copyInto(out->norms, &norms, norms.count * sizeof(vec3));
 
 	out->vertCount = verts.count;
 	out->verts = malloc(sizeof(vec3) * verts.count);
-	copyLinkedListInto(out->verts, &verts, verts.count * sizeof(vec3));
+	ll_copyInto(out->verts, &verts, verts.count * sizeof(vec3));
 
 	out->uvCount = texcoords.count;
 	out->uvs = malloc(sizeof(vec2) * texcoords.count);
-	copyLinkedListInto(out->uvs, &texcoords, texcoords.count * sizeof(vec3));
+	ll_copyInto(out->uvs, &texcoords, texcoords.count * sizeof(vec3));
 
 	out->meshCount = meshes.count;
 	out->meshes = malloc(sizeof(objmesh_t) * meshes.count);
-	copyLinkedListInto(out->meshes, &meshes, meshes.count * sizeof(objmesh_t));
+	ll_copyInto(out->meshes, &meshes, meshes.count * sizeof(objmesh_t));
 
 	// Fill in the mesh data with real pointers
 	for(int i = 0; i < out->meshCount; i++)
@@ -299,10 +299,10 @@ void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)
 		out->meshes[i].faces = out->facepool + (unsigned int)out->meshes[i].faces;
 	}
 
-	clearLinkedList(&faces);
-	clearLinkedList(&norms);
-	clearLinkedList(&verts);
-	clearLinkedList(&texcoords);
+	ll_clear(&faces);
+	ll_clear(&norms);
+	ll_clear(&verts);
+	ll_clear(&texcoords);
 }
 
 

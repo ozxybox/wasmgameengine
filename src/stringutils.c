@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 // We can't be having two threads writing over the same space!
-static /*_Thread_local*/ char* buf = 0;
+static _Thread_local char* buf = 0;
 
 // Never use for returns!
 char* workingBuffer(int size)

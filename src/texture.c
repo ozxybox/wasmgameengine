@@ -1,143 +1,214 @@
 #include "texture.h"
+#include "log.h"
+#include "linkedlist.h"
+#include "map.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <ogl.h>
-#include "log.h"
 
 
 typedef struct textureData_t
 {
-    GLuint id;
+    unsigned int id;
+    GLuint glid;
     
     unsigned int width;
-    unsigned int height;
-    
-    struct textureData_t* next;
-
+    unsigned int height;    
 } textureData_t;
 
-static textureData_t s_textures[MAX_TEXTURES];
-static unsigned int s_textureCount = 0;
+static linklist_t s_textureList;
+static map_t s_textureMap;
+static unsigned int s_textureId;
 
-static texture_t s_pErrorTexture = 0;
+static textureData_t* s_pErrorTexture = 0;
 
 static textureData_t* newTextureData()
 {
-    textureData_t* dat = s_textures + s_textureCount;
-    s_textureCount++;
- 
-    return dat;
+    // Get a new key id
+    unsigned int k = s_textureId;
+    s_textureId++;
+
+    // Set up the data
+    textureData_t m = {
+        .id = k,
+
+        .glid = GL_INVALID_INDEX,
+        .width = 0,
+        .height = 0,
+    };
+
+    // Make space for it on the list
+    linkitem_t* li = ll_push(&s_textureList, &m);
+    void* dat = ll_access(li);
+
+    // Place it in the map
+    map_set(&s_textureMap, k, dat);
+
+    // Pass back the texture
+    return (textureData_t*)dat;
 }
 
-static texture_t textureDataToIdx(textureData_t* data)
+static int textureDataFromId(texture_t texture, textureData_t** out)
 {
-    size_t off = data - s_textures;
-
-    if(off >= MAX_TEXTURES)
-        return TEXTURE_INVALID_INDEX;
-    return off;
+    // Pull in our data from our id
+    textureData_t* dat;
+    if(map_get(&s_textureMap, texture, (void**)&dat))
+    {
+        if(out) *out = dat;
+        return 1;
+    }
+    else
+    {
+        // FIXME: Too annyoing //logError("[texture] (%u) does not exist!", texture);
+        
+        if(out) *out = s_pErrorTexture;
+        return 0;
+    }
 }
 
 static GLuint createGLTexture()
 {
-  GLuint texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//GL_NEAREST);//GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);//GL_NEAREST);//GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  return texture;
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);//GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);//GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);//GL_CLAMP_TO_EDGE);
+    return texture;
 }
 
-
-void textureSystemInit()
+static void deleteTextureGL(textureData_t* tex)
 {
-   unsigned int errorTexturePix[] = 
-   {0xFF00FFFFu, 0xFFFF00FFu,
-    0xFFFF00FFu, 0xFF00FFFFu};
-   s_pErrorTexture = loadTexture(&errorTexturePix[0], 2, 2);
-
+    if(tex->glid != GL_INVALID_INDEX)
+        glDeleteTextures(1, &tex->glid);
 }
 
-void textureSystemShutdown()
+static void loadIntoTexture(textureData_t* tex, void* pixels, unsigned int width, unsigned int height)
 {
+    tex->width = width;
+    tex->height = height;
+    tex->glid = createGLTexture();
 
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
+extern unsigned int g_textureErrorPixels[];
+extern unsigned int g_textureErrorWidth;
+extern unsigned int g_textureErrorHeight;
 
- 
-texture_t errorTexture()
+
+void texture_systemInit()
 {
-    return s_pErrorTexture;
+    logInfo("[texture] System Init");
+
+    s_textureId = 0;
+    s_textureList = ll_create(sizeof(textureData_t));
+    s_textureMap = map_create();
+
+    // Create error texture
+    s_pErrorTexture = newTextureData();
+    loadIntoTexture(s_pErrorTexture, &g_textureErrorPixels[0], g_textureErrorWidth, g_textureErrorHeight);
 }
 
+void texture_systemShutdown()
+{
+    logInfo("[texture] System Shutdown");
+
+    // Clear out all GL data
+    for(linkitem_t* li = s_textureList.first; li; li = li->next)
+        deleteTextureGL(ll_access(li));
+
+    // Clear out the lists
+    ll_clear(&s_textureList);
+    map_clear(&s_textureMap);
+}
+
+void texture_systemReload()
+{
+    texture_systemShutdown();
+    texture_systemInit();
+}
+
+texture_t texture_error()
+{
+    return s_pErrorTexture->id;
+}
 
 // Empty slot for placing a texture later
-texture_t emptyTexture()
+texture_t texture_empty()
 {
-    textureData_t* tex = newTextureData();
-    tex->width = 0;
-    tex->height = 0;
-    tex->id = GL_INVALID_INDEX;
+    texture_t k = newTextureData()->id;
+    return k;
+}
 
-    return textureDataToIdx(tex);
+void texture_delete(texture_t texture)
+{
+    textureData_t* tex;
+    if(map_get(&s_textureMap, texture, (void**)&tex))  
+    {
+        deleteTextureGL(tex);
+        map_remove(&s_textureMap, texture);
+        ll_remove(&s_textureMap, ll_item(tex));
+    }
 }
 
 // Loads data into an empty texture
-void loadIntoTexture(texture_t texture, unsigned char* pixels, unsigned int width, unsigned int height)
+void texture_loadInto(texture_t texture, unsigned char* pixels, unsigned int width, unsigned int height)
 {
-    if(s_textureCount == 0 || texture >= s_textureCount) return;
-
-    textureData_t* tex = &s_textures[texture];
-    tex->width = width;
-    tex->height = height;
-    tex->id = createGLTexture();
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    
+    textureData_t* tex;
+    if(map_get(&s_textureMap, texture, (void**)&tex))  
+        loadIntoTexture(tex, pixels, width, height);
+    //else
+        // FIXME: Too annyoing //logError("[texture] (%u) does not exist!", texture);
 }
 
 
 // Texture creating
-texture_t loadTexture(unsigned char* pixels, unsigned int width, unsigned int height)
+texture_t texture_load(unsigned char* pixels, unsigned int width, unsigned int height)
 {
-    texture_t tex = textureDataToIdx(newTextureData());
+    textureData_t* tex = newTextureData();
     loadIntoTexture(tex, pixels, width, height);
-    return tex;
+    return tex->id;
 }
 
 
-void bindTexture(texture_t tex)
+void texture_bind(texture_t texture)
 {
-    if(s_textureCount == 0) return;
-    textureData_t* dat = &s_textures[tex];
-    if(dat->id == GL_INVALID_INDEX)
-        glBindTexture(GL_TEXTURE_2D, s_textures[s_pErrorTexture].id);
+    textureData_t* tex;
+    textureDataFromId(texture, &tex);
+
+    if(tex->glid == GL_INVALID_INDEX)
+        glBindTexture(GL_TEXTURE_2D, s_pErrorTexture->glid);
     else
-        glBindTexture(GL_TEXTURE_2D, dat->id);
+        glBindTexture(GL_TEXTURE_2D, tex->glid);
 }
 
 
-void setTextureDimensions(texture_t texture, int* w, int* h)
+void texture_setDimensions(texture_t texture, unsigned int* w, unsigned int* h)
 {
-    if(s_textureCount == 0 || texture >= s_textureCount) return;
-
-    textureData_t* tex = &s_textures[texture];
-
-    if(w)
-        tex->width = *w;
-    if(h)
-        tex->height = *h;
+    textureData_t* tex;
+    if(textureDataFromId(texture, &tex))  
+    {
+        if(w)
+            tex->width = *w;
+        if(h)
+            tex->height = *h;
+    }
+    //else
+        // FIXME: Too annyoing //logError("[texture] (%u) does not exist!", texture);
 } 
-void getTextureDimensions(texture_t texture, int* w, int* h)
+
+void texture_getDimensions(texture_t texture, unsigned int* w, unsigned int* h)
 {
-    if(s_textureCount == 0 || texture >= s_textureCount) return;
-
-    textureData_t* tex = &s_textures[texture];
-
-    if(w)
-        *w = tex->width;
-    if(h)
-        *h = tex->height;
+    textureData_t* tex;
+    if(textureDataFromId(texture, &tex))  
+    {
+        if(w)
+            *w = tex->width;
+        if(h)
+            *h = tex->height;
+    }
+    //else
+        // FIXME: Too annyoing //logError("[texture] (%u) does not exist!", texture);
 }

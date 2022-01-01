@@ -5,7 +5,7 @@
 #include <lodepng/lodepng.h>
 #include <stdlib.h>
 
-void loadIntoTextureFromPNG(texture_t texture, const unsigned char* png, unsigned int size)
+void texture_loadIntoFromPNG(texture_t texture, const unsigned char* png, unsigned int size)
 {
     unsigned char* image = 0;
     unsigned int width, height;
@@ -14,21 +14,21 @@ void loadIntoTextureFromPNG(texture_t texture, const unsigned char* png, unsigne
     if(error)
         logError("Failed to decode png! Error %u: %s\n", error, lodepng_error_text(error));
     else
-        loadIntoTexture(texture, image, width, height);
+        texture_loadInto(texture, image, width, height);
 
     if(image) free(image);
 }
-texture_t loadTextureFromPNG(const unsigned char* png, unsigned int size)
+texture_t texture_loadFromPNG(const unsigned char* png, unsigned int size)
 {
     unsigned char* image = 0;
     unsigned int width, height;
 
-    texture_t texture = errorTexture();
+    texture_t texture = texture_error();
     unsigned int error = lodepng_decode32(&image, &width, &height, png, size);
     if(error)
         logError("Failed to decode png! Error %u: %s\n", error, lodepng_error_text(error));
     else
-        texture = loadTexture(image, width, height);
+        texture = texture_load(image, width, height);
 
     free(image);
 
@@ -41,7 +41,7 @@ meshBufferData_t loadMeshDataFromObj(const unsigned char* obj, unsigned int size
     objmodel_t model;
     decodeOBJ(obj, size, &model);
 
-    logInfo("MESH COUNT %d", model.meshCount);
+    //logInfo("MESH COUNT %d", model.meshCount);
 
     meshBufferData_t* meshes = malloc(sizeof(meshBufferData_t) * model.meshCount);
 
@@ -79,7 +79,7 @@ meshBufferData_t loadMeshDataFromObj(const unsigned char* obj, unsigned int size
             for(int k = 0; k < face->vertexCount; k++)
                 *vtx++ = (vertex_t){.pos = model.verts[face->vertices[k].vertex], .norm = model.norms[face->vertices[k].normal], .uv = model.uvs[face->vertices[k].uv]}; 
         }
-        logInfo("MODEL %d %d", curele, elements);
+        //logInfo("MODEL %d %d", curele, elements);
 
         meshes[meshidx] = (meshBufferData_t){vertices, curele, indices, elements};
     }

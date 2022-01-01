@@ -3,8 +3,8 @@
 #include "mesh.h"
 
 
-texture_t loadTextureFromPNG(const unsigned char* png, unsigned int size);
-void loadIntoTextureFromPNG(texture_t texture, const unsigned char* png, unsigned int size);
+texture_t texture_loadFromPNG(const unsigned char* png, unsigned int size);
+void texture_loadIntoFromPNG(texture_t texture, const unsigned char* png, unsigned int size);
 //mesh_t loadModelFromObj(const unsigned char* obj, unsigned int size);
 //void loadIntoModelFromObj(mesh_t mesh, const unsigned char* obj, unsigned int size);
 

@@ -5,22 +5,25 @@
 #define MESH_INVALID_INDEX 0xFFFFFFFF 
 typedef unsigned int mesh_t;
 
-typedef struct {
+typedef struct vertex_t {
     vec3 pos;
     vec3 norm;
     vec2 uv;
 } vertex_t;
 
-void meshSystemInit();
-void meshSystemShutdown();
+void mesh_systemInit();
+void mesh_systemShutdown();
+void mesh_systemReload();
 
 // Empty slot for placing a mesh later
-mesh_t emptyMesh();
+mesh_t mesh_empty();
+void mesh_delete(mesh_t mesh);
 
-mesh_t loadMeshFromArray(vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount);
-void loadIntoMeshFromArray(mesh_t mesh, vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount);
-void unloadAllMeshs();
+mesh_t mesh_loadFromArray(vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount);
+void mesh_loadIntoFromArray(mesh_t mesh, vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount);
 
-void bindMesh(mesh_t mesh);
-void drawMesh(mesh_t mesh);
-void unbindMesh();
+void mesh_bind(mesh_t mesh);
+void mesh_draw(mesh_t mesh);
+void mesh_unbind();
+
+mesh_t mesh_error();

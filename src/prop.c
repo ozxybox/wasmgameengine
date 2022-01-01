@@ -13,15 +13,15 @@ typedef struct propData_t {
 } propData_t;
 
 propData_t s_props[MAX_PROPS];
-unsigned int s_propCount = 0;
+unsigned int s_prop_count = 0;
 
 propData_t* newProp()
 {
-    if(s_propCount >= MAX_PROPS) return 0;
-    return &s_props[s_propCount++];
+    if(s_prop_count >= MAX_PROPS) return 0;
+    return &s_props[s_prop_count++];
 }
 
-prop_t createProp()
+prop_t prop_create()
 {
     // New prop
     propData_t* dat = newProp();
@@ -30,22 +30,22 @@ prop_t createProp()
     dat->visible = 1;
     dat->transform = (transform_t){{0,0,0},{0,0,0},{1,1,1}};
     dat->mesh = MESH_INVALID_INDEX;
-    dat->texture = TEXTURE_INVALID_INDEX;
+    dat->texture = 0;
     dat->shader = SHADER_INVALID_INDEX;
     return dat - s_props;
 }
 
-void deleteProp(prop_t prop)
+void prop_delete(prop_t prop)
 {
-    if(prop >= s_propCount) return;
-    if(prop + 1 == s_propCount) s_propCount--;
+    if(prop >= s_prop_count) return;
+    if(prop + 1 == s_prop_count) s_prop_count--;
     s_props[prop].active = 0;
 }
 
-void deleteAllProps(prop_t prop)
+void prop_deleteAll(prop_t prop)
 {
     memset(s_props, 0, sizeof(s_props));
-    s_propCount = 0;
+    s_prop_count = 0;
 }
 
 void setPropMesh(prop_t prop, mesh_t mesh);
@@ -56,50 +56,50 @@ mesh_t getPropMesh(prop_t prop);
 texture_t getPropTexture(prop_t prop);
 shader_t getPropShader(prop_t prop);
 
-void setPropInfo(prop_t prop, mesh_t mesh, texture_t texture, shader_t shader)
+void prop_setInfo(prop_t prop, mesh_t mesh, texture_t texture, shader_t shader)
 {
-    if(prop >= s_propCount) return;
+    if(prop >= s_prop_count) return;
     s_props[prop].mesh = mesh;
     s_props[prop].texture = texture;
     s_props[prop].shader = shader;
 }
 
 
-void setPropOrigin(prop_t prop, vec3 origin)
+void prop_setOrigin(prop_t prop, vec3 origin)
 {
-    if(prop >= s_propCount) return;
+    if(prop >= s_prop_count) return;
     s_props[prop].transform.origin = origin;
 }
-void setPropRotation(prop_t prop, vec3 rotation)
+void prop_setRotation(prop_t prop, vec3 rotation)
 {
-    if(prop >= s_propCount) return;
+    if(prop >= s_prop_count) return;
     s_props[prop].transform.rotation = rotation;
 }
-void setPropScale(prop_t prop, vec3 scale)
+void prop_setScale(prop_t prop, vec3 scale)
 {
     //logInfo("p%d - %f %f %f", prop, scale.x, scale.y, scale.z);
-    if(prop >= s_propCount) return;
+    if(prop >= s_prop_count) return;
     s_props[prop].transform.scale = scale;
 }
 
-void setPropVisible(prop_t prop, int visible)
+void prop_setVisible(prop_t prop, int visible)
 {
-    if(prop >= s_propCount) return;
+    if(prop >= s_prop_count) return;
     s_props[prop].visible = visible;
 }
-int getPropVisible(prop_t prop)
+int prop_getVisible(prop_t prop)
 {
-    if(prop >= s_propCount) return 0;
+    if(prop >= s_prop_count) return 0;
     return s_props[prop].visible;
 }
 
 
-unsigned int propCount()
+unsigned int prop_count()
 {
-    return s_propCount;
+    return s_prop_count;
 }
 
-void drawPropData(propData_t* data)
+void prop_drawData(propData_t* data)
 {
     if(!data->visible || !data->active)
         return;
@@ -107,38 +107,38 @@ void drawPropData(propData_t* data)
     //logInfo("Shader %d mesh %d texture %d", data->shader, data->mesh, data->texture);
     
     // Shader
-    bindShader(data->shader);
+    shader_bind(data->shader);
     
     // Texture
-    bindTexture(data->texture);
+    texture_bind(data->texture);
     
     // Transformation
     mat4x4 model;
-    transformMatrix(&data->transform, &model);
-    setUniform(SHADER_UNIFORM_MODEL, &model);
+    transform_matrix(&data->transform, &model);
+    shader_set(SHADER_UNIFORM_MODEL, &model);
     //logInfo("p%d - %f %f %f", data - s_props, data->transform.scale.x, data->transform.scale.y, data->transform.scale.z);
     
     // Draw mesh
-    bindMesh(data->mesh);
-    drawMesh(data->mesh);
-    unbindMesh();
+    mesh_bind(data->mesh);
+    mesh_draw(data->mesh);
+    mesh_unbind();
 }
 
-void drawProp(prop_t prop)
+void prop_draw(prop_t prop)
 {
-    if(prop >= s_propCount) return;
-    drawPropData(&s_props[prop]);
+    if(prop >= s_prop_count) return;
+    prop_drawData(&s_props[prop]);
 }
 
-void drawAllProps()
+void prop_drawAll()
 {
-    for(unsigned int i = 0; i < s_propCount; i++)
+    for(unsigned int i = 0; i < s_prop_count; i++)
     {
-        drawPropData(&s_props[i]);
+        prop_drawData(&s_props[i]);
     }
 }
 
-vec3 getPropOrigin(prop_t prop)
+vec3 prop_getOrigin(prop_t prop)
 {
     return s_props[prop].transform.origin;
 }

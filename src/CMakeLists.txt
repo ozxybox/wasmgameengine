@@ -8,16 +8,25 @@ add_definitions("-pthread")
 set( SOURCES 
 	
 
+# Utils
 	log.h
 	log.c
-
-# Utils
-	linalg.h
-	linalg.c
 	linkedlist.h
 	linkedlist.c
+	refpool.h
+	refpool.c
 	stringutils.h
 	stringutils.c
+	hash.h
+	hash.c
+	hashmap.h
+	hashmap.c
+	map.h
+	map.c
+	
+# Math Utils
+	linalg.h
+	linalg.c
 	transform.h
 	transform.c
 
@@ -30,25 +39,31 @@ set( SOURCES
 # Asset Systems
 	asset.h
 	asset.c
-	texture.h
-	texture.c
-	mesh.h
-	mesh.c
 	model.h
-#	model.c
+	#	model.c
 	primitives.h
 	primitives.c
 	prop.h
 	prop.c
-
+	errorassets.c
+	
 # Rendering
 	renderer.h
 	renderer.c
 	shader.h
 	shader.c
+	texture.h
+	texture.c
+	mesh.h
+	mesh.c
 	camera.h
 	camera.c
 
+# Environment
+	terrain.h
+	terrain.c
+
+# Javascript things
 	binding.c
 
 )

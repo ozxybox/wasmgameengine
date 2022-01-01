@@ -1,11 +1,15 @@
 #include "mesh.h"
 #include "primitives.h"
+#include "log.h"
+#include "linkedlist.h"
+#include "map.h"
+#include <ogl.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <ogl.h>
-#include "log.h"
 
 typedef struct meshData_t {
+    mesh_t id;
+
     GLuint vao;
     GLuint vbo;
     GLuint ibo;
@@ -15,102 +19,77 @@ typedef struct meshData_t {
 
 static meshData_t* s_pErrorMesh = 0;
 
-static meshData_t s_meshPool[MAX_MESHES];
-static unsigned int s_meshCount = 0;
+static linklist_t s_meshList;
+static map_t s_meshMap;
+static unsigned int s_meshId;
+
+//////////////////////
+// Static functions //
+//////////////////////
 
 static meshData_t* newMeshData()
 {
-    meshData_t* dat = s_meshPool + s_meshCount;
-    s_meshCount++;
-    // This should be clear from meshSystemInit, so we don't have to wipe it
-    logWarn("meshs used %u", s_meshCount);
+    // Get a new key id
+    unsigned int k = s_meshId;
+    s_meshId++;
+
+    // Set up the data
+    meshData_t m = {
+        .id = k,
+
+        .vao = GL_INVALID_INDEX,
+        .vbo = GL_INVALID_INDEX,
+        .ibo = GL_INVALID_INDEX,
+
+        .elementCount = 0
+    };
+
+    // Make space for it on the list
+    linkitem_t* li = ll_push(&s_meshList, &m);
+    void* dat = ll_access(li);
+
+    // Place it in the map
+    map_set(&s_meshMap, k, dat);
+
+    // Pass back the mesh
+    return (meshData_t*)dat;
+}
+
+static meshData_t* meshDataFromId(mesh_t mesh)
+{
+    // Pull in our data from our id
+    meshData_t* dat;
+    int success = map_get(&s_meshMap, mesh, (void**)&dat);
+    if(!success)
+    {
+        // FIXME: Too annyoing // logError("[mesh] (%u) does not exist!", mesh);
+        dat = s_pErrorMesh;
+    }
+    else if(dat->vao == GL_INVALID_INDEX || dat->vbo == GL_INVALID_INDEX || dat->ibo == GL_INVALID_INDEX)
+    {
+        //logError("[mesh] (%u) invalid!", mesh);
+        // Probably waiting for this model to load. No shouting
+        dat = s_pErrorMesh;
+    }
+
     return dat;
 }
 
-static mesh_t meshDataToIdx(meshData_t* data)
+
+static void deleteMeshGL(meshData_t* data)
 {
-    size_t off = data - s_meshPool;
-    logWarn("off %u", off);
-
-    if(off >= MAX_MESHES)
-        return MESH_INVALID_INDEX;
-    return off;
-}
-
-static void clearMeshData(meshData_t* data)
-{
-    data->vao = GL_INVALID_INDEX;
-    data->vbo = GL_INVALID_INDEX;
-    data->ibo = GL_INVALID_INDEX;
-    
-    data->elementCount = 0;
-}
-
-// deletes off the back
-static void popMeshs(unsigned int count)
-{
-    int start = s_meshCount - count;
-    if(start < 0 ) start = 0;
-
-    for(int i = start; i < s_meshCount; i++)
-    {
-        meshData_t* data = &s_meshPool[i];    
-
-        // Delete our gl data
+    // Delete our gl data
+    if(data->vbo != GL_INVALID_INDEX)
         glDeleteBuffers(1, &data->vbo);
+    if(data->ibo != GL_INVALID_INDEX)
         glDeleteBuffers(1, &data->ibo);
+    if(data->vao != GL_INVALID_INDEX)
         glDeleteVertexArrays(1, &data->vao);
-
-        // Clear the struct
-        clearMeshData(data);
-    }
-
-    // Back to the start
-    s_meshCount = start;
 }
 
-void unloadAllMeshs()
+
+static void loadMeshData(meshData_t* dat, vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount)
 {
-    // Keep our first mesh, the error mesh
-    popMeshs(s_meshCount-1);
-}
-
-
-static vertex_t s_cubeVbo[];
-static unsigned short s_cubeIbo[];
-
-void meshSystemInit()
-{
-    // Clear our data
-    s_meshCount = 0;
-    for(int i = 0; i < MAX_MESHES; i++)
-        clearMeshData(&s_meshPool[i]);
-
-    // Create the error mesh
-
-}
-
-void meshSystemShutdown()
-{
-    popMeshs(MAX_MESHES);
-}
-
-mesh_t emptyMesh()
-{
-    meshData_t* dat = newMeshData();
-    dat->vao = GL_INVALID_INDEX;
-    dat->vbo = GL_INVALID_INDEX;
-    dat->ibo = GL_INVALID_INDEX;
-    dat->elementCount = 0;
-    return meshDataToIdx(dat);
-}
-
-
-void loadIntoMeshFromArray(mesh_t mesh, vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount)
-{   
-    if(mesh >= MAX_MESHES) {logInfo("LOL %u", mesh); return;}
-    meshData_t* dat = &s_meshPool[mesh];
-
     GLuint vao, vbo, ibo;
 
 	glGenVertexArrays(1, &vao);
@@ -129,26 +108,100 @@ void loadIntoMeshFromArray(mesh_t mesh, vertex_t* vertices, int vertexCount, uns
     dat->ibo = ibo;
     dat->elementCount = indexCount;
 }
-mesh_t loadMeshFromArray(vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount)
-{
-    
-    meshData_t* dat = newMeshData();
-    mesh_t mesh = meshDataToIdx(dat);
-    loadIntoMeshFromArray(mesh, vertices, vertexCount, indices, indexCount);
 
-    return mesh;
+extern vertex_t g_meshErrorVBO[];
+extern unsigned short g_meshErrorIBO[];
+extern int g_meshErrorVN;
+extern int g_meshErrorIN;
+
+static void createErrorMesh()
+{
+    // Create the error mesh
+    s_pErrorMesh = newMeshData();
+    loadMeshData(s_pErrorMesh, g_meshErrorVBO, g_meshErrorVN, g_meshErrorIBO, g_meshErrorIN);
 }
 
-void bindMesh(mesh_t mesh)
+
+///////////////////////
+// Exposed Functions //
+///////////////////////
+
+void mesh_systemInit()
 {
-    if(mesh >= MAX_MESHES) {mesh = cubeMesh();}
-    meshData_t* dat = &s_meshPool[mesh];
-    if(dat->vao == GL_INVALID_INDEX || dat->vbo == GL_INVALID_INDEX || dat->ibo == GL_INVALID_INDEX) {bindMesh(cubeMesh()); return;}
+    logInfo("[mesh] System Init");
+
+    s_meshId = 0;
+    s_meshList = ll_create(sizeof(meshData_t));
+    s_meshMap = map_create();
+
+    // Create error mesh
+    createErrorMesh();
+}
+
+void mesh_systemShutdown()
+{
+    logInfo("[mesh] System Shutdown");
+
+    // Clear out all GL data
+    for(linkitem_t* li = s_meshList.first; li; li = li->next)
+        deleteMeshGL(ll_access(li));
+
+    // Clear out the lists
+    ll_clear(&s_meshList);
+    map_clear(&s_meshMap);
+}
+
+void mesh_systemReload()
+{
+    mesh_systemShutdown();
+    mesh_systemInit();
+}
+
+mesh_t mesh_empty()
+{
+    return newMeshData()->id;
+}
 
 
-    glBindVertexArray(dat->vao);
-	glBindBuffer(GL_ARRAY_BUFFER, dat->vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dat->ibo);
+void mesh_delete(mesh_t mesh)
+{
+    meshData_t* data;
+    if(map_get(&s_meshMap, mesh, (void**)&data))  
+    {
+        deleteMeshGL(data);
+
+        // Remove from the map and list
+        map_remove(&s_meshMap, data->id);
+        ll_remove(&s_meshList, ll_item(data));
+    }
+}
+
+
+void mesh_loadIntoFromArray(mesh_t mesh, vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount)
+{   
+    meshData_t* data;
+    if(map_get(&s_meshMap, mesh, (void**)&data))
+        loadMeshData(data, vertices, vertexCount, indices, indexCount);
+    //else
+        // FIXME: Too annyoing //logError("[mesh] (%u) does not exist!", mesh);
+}
+
+mesh_t mesh_loadFromArray(vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount)
+{
+    meshData_t* data = newMeshData();
+    loadMeshData(data, vertices, vertexCount, indices, indexCount);
+
+    return data->id;
+}
+
+void mesh_bind(mesh_t mesh)
+{
+    meshData_t* data = meshDataFromId(mesh);
+    
+    // Bind up the mesh
+    glBindVertexArray(data->vao);
+	glBindBuffer(GL_ARRAY_BUFFER, data->vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data->ibo);
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
@@ -160,17 +213,21 @@ void bindMesh(mesh_t mesh)
 }
 
 
-void drawMesh(mesh_t mesh)
+void mesh_draw(mesh_t mesh)
 {
-    if(mesh >= MAX_MESHES) {mesh = cubeMesh();}
-    meshData_t* dat = &s_meshPool[mesh];
-    if(dat->vao == GL_INVALID_INDEX || dat->vbo == GL_INVALID_INDEX || dat->ibo == GL_INVALID_INDEX) {bindMesh(cubeMesh()); return;}
+    meshData_t* data = meshDataFromId(mesh);
 
-	glDrawElements(GL_TRIANGLES, dat->elementCount, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, data->elementCount, GL_UNSIGNED_SHORT, 0);
 }
-void unbindMesh()
+
+void mesh_unbind()
 {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+}
+
+mesh_t mesh_error()
+{
+    return s_pErrorMesh->id;
 }

@@ -9,69 +9,77 @@ set( SOURCES
 	
 
 # Utils
-	log.h
-	log.c
-	linkedlist.h
-	linkedlist.c
-	refpool.h
-	refpool.c
-	stringutils.h
-	stringutils.c
-	hash.h
-	hash.c
-	hashmap.h
-	hashmap.c
-	map.h
-	map.c
+	"util/log.h"
+	"util/log.c"
+	"util/linkedlist.h"
+	"util/linkedlist.c"
+	"util/refpool.h"
+	"util/refpool.c"
+	"util/stringutils.h"
+	"util/stringutils.c"
+	"util/hash.h"
+	"util/hash.c"
+	"util/hashmap.h"
+	"util/hashmap.c"
+	"util/map.h"
+	"util/map.c"
 	
-# Math Utils
-	linalg.h
-	linalg.c
-	transform.h
-	transform.c
+# Math util
+	"math/linalg.h"
+	"math/linalg.c"
+	"math/transform.h"
+	"math/transform.c"
 
-# Decoders
-	objimport.h
-	objimport.c
-	assetdecode.h
-	assetdecode.c
+	
+# Asset System
+	"assetsys/asset.h"
+	"assetsys/asset.c"
+	"assetsys/primitives.h"
+	"assetsys/primitives.c"
+	"assetsys/objimport.h"
+	"assetsys/objimport.c"
+	"assetsys/assetdecode.h"
+	"assetsys/assetdecode.c"
 
-# Asset Systems
-	asset.h
-	asset.c
-	model.h
-	#	model.c
-	primitives.h
-	primitives.c
-	prop.h
-	prop.c
-	errorassets.c
 	
 # Rendering
-	renderer.h
-	renderer.c
-	shader.h
-	shader.c
-	texture.h
-	texture.c
-	mesh.h
-	mesh.c
-	camera.h
-	camera.c
+	"render/renderer.h"
+	"render/renderer.c"
+	"render/shader.h"
+	"render/shader.c"
+	"render/texture.h"
+	"render/texture.c"
+	"render/mesh.h"
+	"render/mesh.c"
+	"render/camera.h"
+	"render/camera.c"
+	"render/errorassets.c"
 
 # Environment
-	terrain.h
-	terrain.c
-	physics.h
-	physics.c
+	"environment/terrain.h"
+	"environment/terrain.c"
+	"environment/physics.h"
+	"environment/physics.c"
+	"environment/prop.h"
+	"environment/prop.c"
 
 # Javascript things
-	binding.c
+	"binding.c"
+
+)
+
+set(INCLUDE_DIRS
+
+	"${CMAKE_CURRENT_SOURCE_DIR}/util/"
+	"${CMAKE_CURRENT_SOURCE_DIR}/math/"
+	"${CMAKE_CURRENT_SOURCE_DIR}/render/"
+	"${CMAKE_CURRENT_SOURCE_DIR}/assetsys/"
+	"${CMAKE_CURRENT_SOURCE_DIR}/environment/"
 
 )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 add_executable( wasmtest ${SOURCES} )
-target_include_directories( wasmtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories( wasmtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIRS})
 target_link_libraries( wasmtest lodepng )
 em_link_post_js(wasmtest binding.js)

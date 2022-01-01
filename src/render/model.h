@@ -1,6 +1,7 @@
 #pragma once
 #include "mesh.h"
-#include "material.h"
+//#include "material.h"
+typedef unsigned int material_t;
 
 #define MAX_MODELS 64
 #define MODEL_INVALID_INDEX 0xFFFFFFFF 

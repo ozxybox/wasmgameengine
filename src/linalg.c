@@ -25,41 +25,52 @@ void identity4x4(mat4x4* mat)
      {0.0f, 0.0f, 0.0f, 1.0f}};
 }
 
-void mul4x4(mat4x4* matOut, mat4x4* matA, mat4x4* matB)
+void mul4x4(mat4x4* out, mat4x4* l, mat4x4* r)
 {
-    mat4x4f* a   = (mat4x4f*)matA;
-    mat4x4f* b   = (mat4x4f*)matB;
-    mat4x4f  out;
+    // Unrolled
+    mat4x4 m;
+    vec4 row;
 
-    for(int m = 0; m < 4; m++)
-    {
-        for(int n = 0; n < 4; n++)
-        {
-            float sum = 0;
-            for(int i = 0; i < 4; i++)
-                sum += (*a)[m][i] * (*b)[i][n];
-            out[m][n] = sum;
-        }
-    }
+    row = (vec4){l->a.x, l->b.x, l->c.x, l->d.x};
+    m.a.x = dotv4(row, r->a);
+    m.b.x = dotv4(row, r->b);
+    m.c.x = dotv4(row, r->c);
+    m.d.x = dotv4(row, r->d);
 
-    *matOut = *(mat4x4*)&out;
+    row = (vec4){l->a.y, l->b.y, l->c.y, l->d.y};
+    m.a.y = dotv4(row, r->a);
+    m.b.y = dotv4(row, r->b);
+    m.c.y = dotv4(row, r->c);
+    m.d.y = dotv4(row, r->d);
+
+    row = (vec4){l->a.z, l->b.z, l->c.z, l->d.z};
+    m.a.z = dotv4(row, r->a);
+    m.b.z = dotv4(row, r->b);
+    m.c.z = dotv4(row, r->c);
+    m.d.z = dotv4(row, r->d);
+    
+    row = (vec4){l->a.w, l->b.w, l->c.w, l->d.w};
+    m.a.w = dotv4(row, r->a);
+    m.b.w = dotv4(row, r->b);
+    m.c.w = dotv4(row, r->c);
+    m.d.w = dotv4(row, r->d);
+
+    *out = m;
 }
 
-void mul4x4v4(vec4* vecOut, mat4x4* matA, vec4* vecB)
+void mul4x4v4(vec4* out, mat4x4* left, vec4* right)
 {
-    mat4x4f* a   = (mat4x4f*)matA;
-    vec4f*   b   = (vec4f*)  vecB;
-    vec4f    out;
+    // Unrolled
 
-    for(int m = 0; m < 4; m++)
-    {
-        float sum = 0;
-        for(int i = 0; i < 4; i++)
-            sum += (*a)[m][i] * (*b)[i];
-        out[m] = sum;
-    }
+    vec4 v;
+    vec4 r = *right;
 
-    *vecOut = *(vec4*)&out;
+    v.x = dotv4((vec4){left->a.x, left->b.x, left->c.x, left->d.x}, r);
+    v.y = dotv4((vec4){left->a.y, left->b.y, left->c.y, left->d.y}, r);
+    v.z = dotv4((vec4){left->a.z, left->b.z, left->c.z, left->d.z}, r);
+    v.w = dotv4((vec4){left->a.w, left->b.w, left->c.w, left->d.w}, r);
+
+    *out = v;
 }
 
 
@@ -102,10 +113,10 @@ void rotateXYZ4x4(mat4x4* out, float x, float y, float z)
 {
     // TODO: Optimize this down into one big matrix 
     mat4x4 mat, rot;
-    rotateXAxis4x4(&mat, x); // Pitch
-    rotateYAxis4x4(&rot, y); // Yaw
+    rotateZAxis4x4(&mat, z); // Roll
+    rotateXAxis4x4(&rot, x); // Pitch
     mul4x4(&mat, &rot, &mat);
-    rotateZAxis4x4(&rot, z); // Roll
+    rotateYAxis4x4(&rot, y); // Yaw
     mul4x4(&mat, &rot, &mat);
     *out = mat;
 }
@@ -146,6 +157,17 @@ vec3 scalev3(vec3 a, float b)
     return (vec3){a.x*b,a.y*b,a.z*b};
 }
 
+vec3 normalizev3(vec3 a)
+{
+    float mag = sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+    return (vec3){a.x / mag, a.y / mag, a.z / mag};
+}
+
+// Vec4 functions
+float dotv4(vec4 a, vec4 b)
+{
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
 
 // Camera projection functions
 

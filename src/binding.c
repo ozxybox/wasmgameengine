@@ -8,12 +8,13 @@
 #include "prop.h"
 #include "camera.h"
 #include "primitives.h"
+#include "physics.h"
 #include "log.h"
 
 static camera_t s_cam;
 
 EMSCRIPTEN_KEEPALIVE
-void js_init(const char* context, int width, int height)
+void js_init(const char* context, int width, int height, float curtime)
 {
     initGL(context, width, height);
 
@@ -23,13 +24,16 @@ void js_init(const char* context, int width, int height)
     s_cam.near = 0.1f;
     s_cam.far = 200.0f;
     s_cam.aspect = height/(float)width;
+
+    physics_systemInit(curtime);
 }
 
 EMSCRIPTEN_KEEPALIVE
-void js_frame()
+void js_frame(float curtime)
 {
     asset_systemThinkSlow();
     //texture_systemThinkSlow();
+    physics_frame(curtime);
 
     clearScreen(0.1f, 0.2f, 0.3f, 1.f);
 }

@@ -163,6 +163,11 @@ vec3 normalizev3(vec3 a)
     return (vec3){a.x / mag, a.y / mag, a.z / mag};
 }
 
+float magv3(vec3 a)
+{
+    return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
 // Vec4 functions
 float dotv4(vec4 a, vec4 b)
 {

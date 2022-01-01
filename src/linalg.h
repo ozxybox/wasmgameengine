@@ -65,6 +65,7 @@ vec3 addfv3(vec3 a, float b);
 vec3 subfv3(vec3 a, float b);
 vec3 scalev3(vec3 a, float b);
 vec3 normalizev3(vec3 a);
+float magv3(vec3 a);
 
 // Vector 4 functions
 float dotv4(vec4 a, vec4 b);

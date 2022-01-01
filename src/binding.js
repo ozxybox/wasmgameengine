@@ -4,16 +4,16 @@ var engine = {};
 function bindEngine() {    
     Module["_enginebinding"] = {
         // Main
-        init: Module.cwrap('js_init', 'void', ['string', 'number', 'number']),
-        frame: Module.cwrap('js_frame', 'void', []),
+        init: Module.cwrap('js_init', 'void', ['string', 'number', 'number', 'number']), //const char* context, int width, int height, float curtime
+        frame: Module.cwrap('js_frame', 'void', ['number']), // float curtime
 
         // Asset system
         asset_preload: Module.cwrap('js_asset_preload', 'number', ['number', 'string']), // Class, Path
-        asset_incref: Module.cwrap('js_asset_incref', 'void', ['number']), // asset_t*
-        asset_decref: Module.cwrap('js_asset_decref', 'void', ['number']), // asset_t*
-        asset_indexof: Module.cwrap('js_asset_indexof', 'number', ['number']), // asset_t*
-        asset_atindex: Module.cwrap('js_asset_atindex', 'number', ['number']), // assetIndex_t
-        asset_data: Module.cwrap('js_asset_data', 'number', ['number']), // asset_t*
+        asset_incref: Module.cwrap('js_asset_incref', 'void', ['number']), // asset_t* asset
+        asset_decref: Module.cwrap('js_asset_decref', 'void', ['number']), // asset_t* asset
+        asset_indexof: Module.cwrap('js_asset_indexof', 'number', ['number']), // asset_t* asset
+        asset_atindex: Module.cwrap('js_asset_atindex', 'number', ['number']), // assetIndex_t asset
+        asset_data: Module.cwrap('js_asset_data', 'number', ['number']), // asset_t* asset
         //mesh_preload: Module.cwrap('js_mesh_preload', 'number', ['string']), // Path
         //texture_preload: Module.cwrap('js_texture_preload', 'number', ['string']), // Path
         //shader_preload: Module.cwrap('js_shader_preload', 'number', ['string']), // Path
@@ -50,7 +50,10 @@ function bindEngine() {
         texture_decRef: Module.cwrap('js_texture_decRef', 'void', ['number']),
 
         terrainTest: Module.cwrap('js_terrainTest', 'number', []),
-        castDown: Module.cwrap('js_castDown', 'number', ['number','number','number']),
+        //castDown: Module.cwrap('js_castDown', 'number', ['number','number','number']),
+        
+        prop_sim: Module.cwrap('js_prop_sim', 'void', ['number']),
+        applyForce: Module.cwrap('js_applyForce', 'void', ['number', 'number', 'number']),
 
         
     };

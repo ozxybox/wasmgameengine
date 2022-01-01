@@ -62,6 +62,8 @@ set( SOURCES
 # Environment
 	terrain.h
 	terrain.c
+	physics.h
+	physics.c
 
 # Javascript things
 	binding.c

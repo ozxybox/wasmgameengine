@@ -8,32 +8,36 @@
 		<canvas id="canvas" width="400" height="400"></canvas>
 			
 	</body>
-	<script type="text/javascript" src="wasmtest.js"></script>
+	<script type="text/javascript" src="/build/wasmtest.js"></script>
 	<script>
 		// Key Input handling
 		var forward = 0;
 		var backward = 0;
 		var left = 0;
 		var right = 0;
+		var jump = 0;
+		var jumpReleased = 0;
+		var startJumpTime = 0;
 		document.addEventListener('keydown', function (event) {
-			if (event.keyCode === 87) // w
-				forward = 1;
-			if (event.keyCode === 83) // s
-				backward = 1;
-			if (event.keyCode === 65) // a
-				left = 1;
-			if (event.keyCode === 68) // d
-				right = 1;
+			switch(event.keyCode)
+			{
+				case 87: forward  = 1; break;
+				case 83: backward = 1; break;
+				case 65: left     = 1; break;
+				case 68: right    = 1; break;
+				case 32: if(jump == 0) { startJumpTime = performance.now()/ 1000.0; } jump = 1; break;
+			}
 		});
 		document.addEventListener('keyup', function (event) {
-			if (event.keyCode === 87) // w
-				forward = 0;
-			if (event.keyCode === 83) // s
-				backward = 0;
-			if (event.keyCode === 65) // a
-				left = 0;
-			if (event.keyCode === 68) // d
-				right = 0;
+			switch(event.keyCode)
+			{
+				case 87: forward  = 0; break;
+				case 83: backward = 0; break;
+				case 65: left     = 0; break;
+				case 68: right    = 0; break;
+				case 32: jumpReleased = 1; break;
+				
+			}
 		});
 
 		// Wait for the engine to load
@@ -41,51 +45,57 @@
 			
 			// Rev up the engine
 			bindEngine();
-			engine.init("canvas", 1024, 768);
+			engine.init("canvas", 1024, 768, performance.now() / 1000.0);
 
-			var shader = engine.preloadShader("phong.glsl");
+			var shader = new shader_t("/src/phong.glsl");
 
-			// Penguin
-			var penguinMesh = engine.preloadMesh("penguin-2.obj")
-			var penguinTexture = engine.preloadTexture("penguin_body_uv_grid_3.png")
-			var penguin = new prop_t();
-			penguin.setInfo(penguinMesh, penguinTexture, shader);
-			penguin.setScale(1, 1, 1);//0.005, 0.005, 0.005)
+			// player
+			var playerMesh = new model_t("/assets/sphere.obj")
+			var playerTexture = new texture_t("/assets/sphere.png")
+
+			var player = new prop_t();
+			player.setInfo(playerMesh, playerTexture, shader);
+			player.setScale(0.25, 0.25, 0.25);
+			player.setOrigin(0, 0, 0);
 
 			// Skybox
-			var skyTexture = engine.preloadTexture("sky.png")
+			var skyTexture = new texture_t("/assets/sky.png")
 			var sky = new prop_t();
-			sky.setInfo(engine.skyMesh(), skyTexture, 0);
+			engine.prop_setInfo(sky.id, engine.skyMesh(), skyTexture.id, 0);
+			skyTexture.incRef();
 			sky.setScale(16, 16, 16);
 
-			// Ground
-			var groundTexture = engine.preloadTexture("floral.png")
-			var ground = new prop_t();
-			ground.setInfo(engine.cubeMesh(), groundTexture, shader);
-			ground.setScale(8, 1, 8);
-			ground.setOrigin(0, -2, 0);
+			/*
+			var shadow = new prop_t;
+			shadow.setInfo(playerMesh, playerTexture, shader);
+			shadow.setScale(0.25, 0, 0.25);
+			shadow.setOrigin(0, 0, 0);
+			*/
 
-			// Donut
-			var donutMesh = engine.preloadMesh("donut.obj")
-			var donutTexture = engine.preloadTexture("donut_base.png")
-			var donut = new prop_t();
-			donut.setInfo(donutMesh, donutTexture, shader);
-			donut.setScale(10, 10, 10);
-			donut.setOrigin(-2, 0.5, -4);
+			// Ground
+			var groundTexture = new texture_t("/assets/grid.png")
+			var ground = new prop_t();
+			engine.prop_setInfo(ground.id, engine.terrainTest(), groundTexture.id, shader.id);
+			groundTexture.incRef();
+			shader.incRef();
+
+			ground.setScale(1, 1, 1);
+			ground.setOrigin(0, 0, 0);
+
 
 			// Sun data
-			engine.setSunDir(3.14/4.0, 3.14, 0);
-			engine.setSunColor(1,1,1,0.45);
+			engine.sun_setColor(0.7,0.7,0.7,0.6);
+
 			
-			// Player position
-			var x = 0
-			var z = 0;
-			
+			var yaw = 0;
+
 			var lastFrameTime = 0;
 			function drawFrame() {
-				engine.frame();
 				var curTime = performance.now() / 1000.0;
 				var dt = curTime - lastFrameTime;
+				engine.frame(curTime);
+
+				engine.sun_setDir(1, 3*3.14/4, 3.14/8.0);
 				
 				// Movement handling
 				var dx = (right - left);
@@ -98,28 +108,45 @@
 					dz = dz / mag;
 
 					// Rotate the player to face the moving direction
-					penguin.setRotation(0, Math.atan2(dz, dx), 0)
+					yaw = Math.atan2(dz, dx)
 				}
 
+				var power = 0;
+				if(jump == 1)
+				{
+					var holdtime = (curTime - startJumpTime);
+					power = Math.sin(Math.min(holdtime / 3.0, 1.0) * 3.14);
+				}
+				
+				// jump
+				if(jumpReleased && jump)
+				{
+					jumpReleased = 0;
+					jump = 0;
+					
+					var m = power * 3.0 / (1.0 / 60.0);
+					dx *= m;
+					dz *= m;
+					
+					engine.applyForce(dx, 4.0 / (1.0 / 60.0), dz)
+				}
+				
 				// Move us
-				var speed = 3;
-				x += dx * dt * speed;
-				z += dz * dt * speed;
-				penguin.setOrigin(x, 0, z);
+				engine.prop_sim(player);
+				//player.setOrigin(x, y+0.25, z);
+
+				player.setRotation(0, yaw, -power * 3.14 * 0.5)
 				
 				// Move the skybox with player
-				sky.setOrigin(x, 0, z);
+				sky.setOrigin(0,0,0);//x+5, 6, z+5);
 				
 				// Camera
-				engine.setCameraOrigin(x, 0.5, z+1);
-				engine.setCameraRotation(0.3,0,0);
-				engine.applyCamera();
-
-				// Wobble donut
-				donut.setRotation(Math.cos(curTime)*3.14/4.0, curTime, Math.sin(curTime)*3.14/4.0);
+				engine.camera_setOrigin(4,4,4);//x+4,4,z+4);//*Math.cos(curTime), 1, 4*Math.sin(curTime));
+				engine.camera_setRotation(0.6,-3.14/4,0);
+				engine.camera_apply();
 
 				// Draw
-				engine.drawAllProps();
+				engine.prop_drawAll();
 
 				lastFrameTime = curTime; 
 				window.requestAnimationFrame(drawFrame)

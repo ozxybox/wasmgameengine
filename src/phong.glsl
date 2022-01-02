@@ -20,7 +20,12 @@ out vec3 v_normal;
 void main(){
     v_uv=a_uv.xy;
     v_worldpos = u_model * a_pos;
-    gl_Position = u_projection * u_view * v_worldpos;
+
+    // Curve the world
+    vec4 campos = u_view * v_worldpos;
+    campos += vec4( 0.0f, (campos.z * campos.z) * -0.02f, 0.0f, 0.0f );
+ 
+    gl_Position = u_projection * campos;
     v_normal = normalize(transpose(inverse(mat3(u_model))) * a_norm.xyz);
 }
 

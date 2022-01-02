@@ -48,6 +48,7 @@
 			engine.init("canvas", 1024, 768, performance.now() / 1000.0);
 
 			var shader = new shader_t("/src/phong.glsl");
+			var skyboxshader = new shader_t("/src/skybox.glsl");
 
 			// player
 			var playerMesh = new model_t("/assets/sphere.obj")
@@ -61,16 +62,12 @@
 			// Skybox
 			var skyTexture = new texture_t("/assets/sky.png")
 			var sky = new prop_t();
-			engine.prop_setInfo(sky.id, engine.skyMesh(), skyTexture.id, 0);
+			engine.prop_setInfo(sky.id, engine.skyMesh(), skyTexture.id, skyboxshader.id);
 			skyTexture.incRef();
-			sky.setScale(16, 16, 16);
+			skyboxshader.incRef();
 
-			/*
-			var shadow = new prop_t;
-			shadow.setInfo(playerMesh, playerTexture, shader);
-			shadow.setScale(0.25, 0, 0.25);
-			shadow.setOrigin(0, 0, 0);
-			*/
+			sky.setScale(32,32,32);
+			sky.setOrigin(0,0,0);
 
 			// Ground
 			var groundTexture = new texture_t("/assets/grid.png")
@@ -82,10 +79,8 @@
 			ground.setScale(1, 1, 1);
 			ground.setOrigin(0, 0, 0);
 
-
 			// Sun data
 			engine.sun_setColor(0.7,0.7,0.7,0.6);
-
 			
 			var yaw = 0;
 
@@ -137,8 +132,6 @@
 
 				player.setRotation(0, yaw, -power * 3.14 * 0.5)
 				
-				// Move the skybox with player
-				sky.setOrigin(0,0,0);//x+5, 6, z+5);
 				
 				// Camera
 				engine.camera_setOrigin(4,4,4);//x+4,4,z+4);//*Math.cos(curTime), 1, 4*Math.sin(curTime));

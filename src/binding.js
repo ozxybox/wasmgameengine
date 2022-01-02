@@ -54,8 +54,9 @@ function bindEngine() {
         
         prop_sim: Module.cwrap('js_prop_sim', 'void', ['number']),
         applyForce: Module.cwrap('js_applyForce', 'void', ['number', 'number', 'number']),
+        onGround: Module.cwrap('js_onGround', 'number', []),
 
-        
+                
     };
     engine = Module["_enginebinding"];
     engine.ASSET_CLASS_NONE = 0

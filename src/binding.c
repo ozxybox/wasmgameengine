@@ -11,7 +11,7 @@
 #include "physics.h"
 #include "log.h"
 
-static camera_t s_cam;
+camera_t s_cam;
 
 EMSCRIPTEN_KEEPALIVE
 void js_init(const char* context, int width, int height, float curtime)

@@ -40,6 +40,7 @@ precision lowp float;
 uniform sampler2D tex;
 uniform vec3 u_sundir;//lightpos;
 uniform vec4 u_lightcolor;
+uniform vec3 u_color;
 
 // Inputs
 in vec2 v_uv;
@@ -54,7 +55,7 @@ void main() {
     // Half Lambert
     float diff = pow(0.5 + 0.5 * dot(v_normal, lightDir), 2.0);
     vec3 diffuse = u_lightcolor.xyz * (diff + u_lightcolor.w);
-    o_fragColor = texture(tex,v_uv) * vec4(diffuse, 1.0);//vec4(1.0, 0.0, 1.0, 1.0);
+    o_fragColor = texture(tex,v_uv) * vec4(diffuse, 1.0) * vec4(u_color.xyz, 1.0);
 }
 
 #END

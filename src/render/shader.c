@@ -59,6 +59,7 @@ typedef struct {
     vec3   lightpos;
     vec4   lightcolor;
     vec3   sundir;
+    vec3   color;
 } uniformData_t;
 static uniformLayoutInfo_t s_uniformLayout[] = {
     UNIFORM(MAT4,   model)
@@ -68,6 +69,7 @@ static uniformLayoutInfo_t s_uniformLayout[] = {
     UNIFORM(FLOAT3, lightpos)
     UNIFORM(FLOAT4, lightcolor)
     UNIFORM(FLOAT3, sundir)
+    UNIFORM(FLOAT3, color)
 };
 #undef UNIFORM
 

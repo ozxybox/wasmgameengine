@@ -10,6 +10,7 @@ typedef struct propData_t {
     mesh_t mesh;
     texture_t texture;
     shader_t shader;
+    vec3 color;
 } propData_t;
 
 propData_t s_props[MAX_PROPS];
@@ -32,6 +33,7 @@ prop_t prop_create()
     dat->mesh = MESH_INVALID_INDEX;
     dat->texture = 0;
     dat->shader = SHADER_INVALID_INDEX;
+    dat->color = (vec3){1.0f, 1.0f, 1.0f};
     return dat - s_props;
 }
 
@@ -82,6 +84,14 @@ void prop_setScale(prop_t prop, vec3 scale)
     s_props[prop].transform.scale = scale;
 }
 
+
+vec3 prop_getOrigin(prop_t prop)
+{
+    return s_props[prop].transform.origin;
+}
+
+
+
 void prop_setVisible(prop_t prop, int visible)
 {
     if(prop >= s_prop_count) return;
@@ -111,6 +121,7 @@ void prop_drawData(propData_t* data)
     
     // Texture
     texture_bind(data->texture);
+    shader_set(SHADER_UNIFORM_COLOR, &data->color);
     
     // Transformation
     mat4x4 model;
@@ -118,6 +129,8 @@ void prop_drawData(propData_t* data)
     shader_set(SHADER_UNIFORM_MODEL, &model);
     //logInfo("p%d - %f %f %f", data - s_props, data->transform.scale.x, data->transform.scale.y, data->transform.scale.z);
     
+
+
     // Draw mesh
     mesh_bind(data->mesh);
     mesh_draw(data->mesh);
@@ -138,7 +151,8 @@ void prop_drawAll()
     }
 }
 
-vec3 prop_getOrigin(prop_t prop)
+void prop_setColor(prop_t prop, vec3 color)
 {
-    return s_props[prop].transform.origin;
+    if(prop >= s_prop_count) return;
+    s_props[prop].color = color;
 }

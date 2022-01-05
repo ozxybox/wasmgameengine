@@ -35,8 +35,9 @@ function bindEngine() {
         prop_setOrigin: Module.cwrap('js_prop_setOrigin', 'void', ['number', 'number', 'number', 'number']),
         prop_setRotation: Module.cwrap('js_prop_setRotation', 'void', ['number', 'number', 'number', 'number']),
         prop_setScale: Module.cwrap('js_prop_setScale', 'void', ['number', 'number', 'number', 'number']),
-        prop_setVisible: Module.cwrap('js_prop_setVisible', 'void', ['number', 'number']),
+        prop_setVisible: Module.cwrap('js_prop_setVisible', 'void', ['number', 'number', 'number', 'number']),
         prop_getVisible: Module.cwrap('js_prop_getVisible', 'number', ['number']),
+        prop_setColor: Module.cwrap('js_prop_setColor', 'void', ['number', 'number', 'number', 'number']),
         prop_count: Module.cwrap('js_prop_count', 'number', []),
         prop_draw: Module.cwrap('js_prop_draw', 'void', ['number']),
         prop_drawAll: Module.cwrap('js_prop_drawAll', 'void', []),
@@ -102,6 +103,9 @@ class prop_t {
     }
     setRotation(p, y, r) {
         engine.prop_setRotation(this.id, p, y, r);
+    }
+    setColor(r, g, b) {
+        engine.prop_setColor(this.id, r, g, b);
     }
     setInfo(mesh, texture, shader) {
         engine.prop_setInfo(this.id, mesh.id, texture.id, shader.id);

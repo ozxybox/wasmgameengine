@@ -22,6 +22,9 @@ vec3 prop_getOrigin(prop_t prop);
 void prop_setVisible(prop_t prop, int visible);
 int prop_getVisible(prop_t prop);
 
+void prop_setColor(prop_t prop, vec3 color);
+
+
 unsigned int prop_count();
 void prop_draw(prop_t prop);
 void prop_drawAll();

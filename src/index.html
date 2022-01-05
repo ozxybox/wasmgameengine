@@ -6,7 +6,6 @@
 	<body>
 	
 		<canvas id="canvas" width="400" height="400"></canvas>
-		Space to jump and Mouse to aim
 			
 	</body>
 	<script type="text/javascript" src="/build/wasmtest.js"></script>
@@ -67,6 +66,7 @@
 			player.setInfo(playerMesh, playerTexture, shader);
 			player.setScale(0.25, 0.25, 0.25);
 			player.setOrigin(0, 0, 0);
+			player.setColor(0, 1, 0);
 
 			// Skybox
 			var skyTexture = new texture_t("/assets/sky.png")
@@ -115,15 +115,18 @@
 					yaw = Math.atan2(dz, dx)
 				}
 
+
 				var power = 0;
 				if(jumpdown == 1)
 				{
 					var holdtime = (curTime - startJumpTime);
 					power = Math.sin(Math.min(holdtime / 3.0, 1.0) * 3.14);
 				}
+				player.setColor(power, 1-power, 0);
+
 				
 				// jump
-				if(jumpReleased && jumpdown && engine.onGround())
+				if(jumpReleased && jumpdown)
 				{
 					jumpReleased = 0;
 					jumpdown = 0;

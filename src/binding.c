@@ -218,6 +218,12 @@ void js_prop_drawAll()
     prop_drawAll();
 }
 
+EMSCRIPTEN_KEEPALIVE
+void js_prop_setColor(prop_t prop, float red, float green, float blue)
+{
+    prop_setColor(prop, (vec3){red, green, blue});
+}
+
 // Primitives
 EMSCRIPTEN_KEEPALIVE
 mesh_t js_cubeMesh()

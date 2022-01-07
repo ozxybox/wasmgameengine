@@ -60,17 +60,20 @@ function bindEngine() {
                 
     };
     engine = Module["_enginebinding"];
-    engine.ASSET_CLASS_NONE = 0
-    engine.ASSET_CLASS_TEXTURE = 1 
-    engine.ASSET_CLASS_MODEL = 2
-    //engine.ASSET_CLASS_SOUND = 2
-    engine.ASSET_CLASS_SHADER = 3
+
+    // Enums
+    engine.ASSET_CLASS_NONE = 0;
+    engine.ASSET_CLASS_TEXTURE = 1; 
+    engine.ASSET_CLASS_MODEL = 2;
+    //engine.ASSET_CLASS_SOUND = 2;
+    engine.ASSET_CLASS_SHADER = 3;
+
+    engine.INVALID_ID = 0xFFFFFFFF;
     
-    console.log("Engine Bound!")
+    console.log("Engine Bound!");
 }
 
 
-//};
 /*
 class vec3 {
     constructor(x,y,z) {
@@ -88,6 +91,10 @@ class transform_t {
 }
 */
 class prop_t {
+    static drawAll() {
+        engine.prop_drawAll();
+    }
+
     constructor() {
         this.id = engine.prop_create();
         
@@ -108,25 +115,50 @@ class prop_t {
         engine.prop_setColor(this.id, r, g, b);
     }
     setInfo(mesh, texture, shader) {
-        engine.prop_setInfo(this.id, mesh.id, texture.id, shader.id);
+        var meshid;
+        var textid;
+        var shadid;
 
-        mesh.incRef();
-        texture.incRef();
-        shader.incRef();
+        // Eventually we should never have to deal with id's from JS
+        if(!(typeof(mesh) === "number"))
+        {
+            mesh.incRef();
+            meshid = mesh.id;
+        }
+        else
+            meshid = mesh;
+        if(!(typeof(texture) === "number"))
+        {
+            texture.incRef();
+            textid = texture.id;
+        }
+        else
+            textid = texture;
+        if(!(typeof(shader) === "number"))
+        {
+            shader.incRef();
+            shadid = shader.id;
+        }
+        else
+            shadid = shader;
+                        
+        // Tell the engine what we're drawing this prop with
+        engine.prop_setInfo(this.id, meshid, textid, shadid);
 
+        // Remember this all for later, when we delete this prop
         this.mesh = mesh;
         this.texture = texture;
         this.shader = shader;
     }
-    delete()
-    {
-        if(!(this.mesh === undefined))
+    delete() {
+        // Eventually we should never have to deal with id's from JS
+        if(!(this.mesh === undefined) && !(typeof(this.mesh) === "number"))
             this.mesh.decRef();
             
-        if(!(this.texture === undefined))
+        if(!(this.texture === undefined) && !(typeof(this.texture) === "number"))
             this.texture.decRef();
         
-        if(!(this.shader === undefined))
+        if(!(this.shader === undefined) && !(typeof(this.shader) === "number"))
             this.shader.decRef();
 
         engine.prop_delete(this.id);

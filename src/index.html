@@ -6,42 +6,35 @@
 	<body>
 	
 		<canvas id="canvas" width="400" height="400"></canvas>
-			
+		Space to boost and Mouse to aim 
 	</body>
 	<script type="text/javascript" src="/build/wasmtest.js"></script>
 	<script>
-		// Key Input handling
-		var forward = 0;
-		var backward = 0;
-		var left = 0;
-		var right = 0;
+		function getTime() { return performance.now() / 1000.0; }
+
+		// Input handling
 		var jumpdown = 0;
 		var jumpReleased = 0;
 		var startJumpTime = 0;
 		var mouseX = 0;
 		var mouseY = 0;
+		var canvas = document.getElementById("canvas");
+		
+		// Key handling
 		document.addEventListener('keydown', function (event) {
 			switch(event.keyCode)
 			{
-				//case 87: forward  = 1; break;
-				//case 83: backward = 1; break;
-				//case 65: left     = 1; break;
-				//case 68: right    = 1; break;
-				case 32: if(jumpdown == 0) { startJumpTime = performance.now()/ 1000.0; } jumpdown = 1; break;
+				case 32: if(jumpdown == 0) { startJumpTime = getTime(); } jumpdown = 1; break;
 			}
 		});
 		document.addEventListener('keyup', function (event) {
 			switch(event.keyCode)
 			{
-				//case 87: forward  = 0; break;
-				//case 83: backward = 0; break;
-				//case 65: left     = 0; break;
-				//case 68: right    = 0; break;
 				case 32: jumpReleased = 1; break;
-				
 			}
 		});
-		var canvas = document.getElementById("canvas");
+
+		// Mouse input
 		canvas.addEventListener('mousemove', function (event) {
 			var rect = canvas.getBoundingClientRect();
 			mouseX = (event.clientX - rect.left) / rect.width * 2.0 - 1.0;
@@ -53,10 +46,9 @@
 			
 			// Rev up the engine
 			bindEngine();
-			engine.init("canvas", 1024, 768, performance.now() / 1000.0);
+			engine.init("canvas", 1024, 768, getTime());
 
 			var shader = new shader_t("/src/phong.glsl");
-			var skyboxshader = new shader_t("/src/skybox.glsl");
 
 			// player
 			var playerMesh = new model_t("/assets/sphere.obj")
@@ -69,38 +61,30 @@
 			player.setColor(0, 1, 0);
 
 			// Skybox
-			var skyTexture = new texture_t("/assets/sky.png")
+			var skyshader = new shader_t("/src/skybox.glsl");
+			var skytexture = new texture_t("/assets/sky.png")
 			var sky = new prop_t();
-			engine.prop_setInfo(sky.id, engine.skyMesh(), skyTexture.id, skyboxshader.id);
-			skyTexture.incRef();
-			skyboxshader.incRef();
-
+			sky.setInfo(engine.skyMesh(), skytexture, skyshader);
 			sky.setScale(32,32,32);
 			sky.setOrigin(0,0,0);
 
 			// Ground
 			var groundTexture = new texture_t("/assets/grid.png")
 			var ground = new prop_t();
-			engine.prop_setInfo(ground.id, engine.terrainTest(), groundTexture.id, shader.id);
-			groundTexture.incRef();
-			shader.incRef();
-
+			ground.setInfo(engine.terrainTest(), groundTexture, shader);
 			ground.setScale(1, 1, 1);
 			ground.setOrigin(0, 0, 0);
-
+			
 			// Sun data
 			engine.sun_setColor(0.7,0.7,0.7,0.6);
+			engine.sun_setDir(1, 3*3.14/4, 3.14/8.0);
 			
-			var yaw = 0;
-
 			var lastFrameTime = 0;
 			function drawFrame() {
-				var curTime = performance.now() / 1000.0;
+				var curTime = getTime();
 				var dt = curTime - lastFrameTime;
 				engine.frame(curTime);
 
-				engine.sun_setDir(1, 3*3.14/4, 3.14/8.0);
-				
 				// Movement handling
 				var dx = mouseX *  0.7071 + mouseY * 0.7071;
 				var dz = mouseX * -0.7071 + mouseY * 0.7071;
@@ -112,7 +96,7 @@
 					dz = dz / mag;
 
 					// Rotate the player to face the moving direction
-					yaw = Math.atan2(dz, dx)
+					//yaw = Math.atan2(dz, dx)
 				}
 
 
@@ -122,6 +106,7 @@
 					var holdtime = (curTime - startJumpTime);
 					power = Math.sin(Math.min(holdtime / 3.0, 1.0) * 3.14);
 				}
+				// Color the ball to the power of the jump
 				player.setColor(power, 1-power, 0);
 
 				
@@ -146,8 +131,8 @@
 				engine.camera_setRotation(0.8,-3.14/4,0);
 				engine.camera_apply();
 
-				// Draw
-				engine.prop_drawAll();
+				// Draw props
+				prop_t.drawAll();
 
 				lastFrameTime = curTime; 
 				window.requestAnimationFrame(drawFrame)

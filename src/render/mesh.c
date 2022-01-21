@@ -15,6 +15,8 @@ typedef struct meshData_t {
     GLuint ibo;
     
     unsigned int elementCount;
+    vtxformat_t format;
+    
 } meshData_t;
 
 static meshData_t* s_pErrorMesh = 0;
@@ -88,28 +90,29 @@ static void deleteMeshGL(meshData_t* data)
 }
 
 
-static void loadMeshData(meshData_t* dat, vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount)
+static void loadMeshData(meshData_t* dat, vtxbuf_t* vtxs, idxbuf_t* idxs)
 {
     GLuint vao, vbo, ibo;
-
+    
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_t) * vertexCount, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vtxs->used * vtxs->vtxsize, vtxs->vbo, GL_STATIC_DRAW);
     
 	glGenBuffers(1, &ibo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned short) * indexCount, indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned short) * idxs->used, idxs->ibo, GL_STATIC_DRAW);
 
     dat->vao = vao;
     dat->vbo = vbo;
     dat->ibo = ibo;
-    dat->elementCount = indexCount;
+    dat->elementCount = idxs->used;
+    dat->format = vtxs->format;
 }
 
-extern vertex_t g_meshErrorVBO[];
+extern vtxprim_t g_meshErrorVBO[];
 extern unsigned short g_meshErrorIBO[];
 extern int g_meshErrorVN;
 extern int g_meshErrorIN;
@@ -118,7 +121,12 @@ static void createErrorMesh()
 {
     // Create the error mesh
     s_pErrorMesh = newMeshData();
-    loadMeshData(s_pErrorMesh, g_meshErrorVBO, g_meshErrorVN, g_meshErrorIBO, g_meshErrorIN);
+
+	vtxbuf_t vbo;
+    idxbuf_t ibo;
+	vtxbuf_reflect(VTXPRIM_FORMAT, g_meshErrorVBO, g_meshErrorVN, &vbo);
+	idxbuf_reflect(g_meshErrorIBO, g_meshErrorIN, &ibo);
+    loadMeshData(s_pErrorMesh, &vbo, &ibo);
 }
 
 
@@ -177,21 +185,34 @@ void mesh_delete(mesh_t mesh)
 }
 
 
-void mesh_loadIntoFromArray(mesh_t mesh, vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount)
+void mesh_loadIntoFromArray(mesh_t mesh, vtxbuf_t* vbo, idxbuf_t* ibo)
 {   
     meshData_t* data;
     if(map_get(&s_meshMap, mesh, (void**)&data))
-        loadMeshData(data, vertices, vertexCount, indices, indexCount);
+        loadMeshData(data, vbo, ibo);
     //else
         // FIXME: Too annyoing //logError("[mesh] (%u) does not exist!", mesh);
 }
 
-mesh_t mesh_loadFromArray(vertex_t* vertices, int vertexCount, unsigned short* indices, int indexCount)
+mesh_t mesh_loadFromArray(vtxbuf_t* vbo, idxbuf_t* ibo)
 {
     meshData_t* data = newMeshData();
-    loadMeshData(data, vertices, vertexCount, indices, indexCount);
+    loadMeshData(data, vbo, ibo);
 
     return data->id;
+}
+
+void mesh_scrub(mesh_t mesh)
+{
+    meshData_t* data;
+    if(map_get(&s_meshMap, mesh, (void**)&data))
+    {
+        deleteMeshGL(data);
+        data->vbo = GL_INVALID_INDEX;
+        data->ibo = GL_INVALID_INDEX;
+        data->vao = GL_INVALID_INDEX;
+        data->elementCount = 0;
+    }
 }
 
 void mesh_bind(mesh_t mesh)
@@ -203,13 +224,29 @@ void mesh_bind(mesh_t mesh)
 	glBindBuffer(GL_ARRAY_BUFFER, data->vbo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data->ibo);
 
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-    
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (const void*)offsetof(vertex_t, pos));
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (const void*)offsetof(vertex_t, norm));
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (const void*)offsetof(vertex_t, uv));
+    vtxformat_t fmt = data->format;
+    unsigned int sz = vtx_size(fmt);
+
+    // Position is always enabled
+    {
+    	glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sz, (const void*)vtx_offsetpos(fmt));
+    }
+    if(fmt & VTX_NORMAL)
+    {
+    	glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sz, (const void*)vtx_offsetnorm(fmt));
+    }
+	if(fmt & VTX_TEXCOORD)
+    {
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sz, (const void*)vtx_offsetuv(fmt));
+    }
+	if(fmt & VTX_COLOR)
+    {
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sz, (const void*)vtx_offsetcolor(fmt));
+    }
 }
 
 
@@ -222,9 +259,10 @@ void mesh_draw(mesh_t mesh)
 
 void mesh_unbind()
 {
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+    glDisableVertexAttribArray(3);
 }
 
 mesh_t mesh_error()

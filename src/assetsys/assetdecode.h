@@ -10,11 +10,8 @@ void texture_loadIntoFromPNG(texture_t texture, const unsigned char* png, unsign
 
 typedef struct 
 {
-    vertex_t* vertices;
-    unsigned int vertexCount;
-
-    unsigned short* indices;
-    unsigned int elementCount;
+    vtxbuf_t vertices;
+    idxbuf_t indices;
 } meshBufferData_t;
 
 meshBufferData_t loadMeshDataFromObj(const unsigned char* obj, unsigned int size);

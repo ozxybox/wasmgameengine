@@ -39,7 +39,7 @@ const char g_shaderErrorFS[] =
 ////////////////
 // ERROR MESH //
 ////////////////
-vertex_t g_meshErrorVBO[] =
+vtxprim_t g_meshErrorVBO[] =
 {
 	// Top face
 	{{ 1, 1,-1}, { 0, 1, 0}, {0.5,0  }},
@@ -104,5 +104,5 @@ unsigned short g_meshErrorIBO[] =
 	20, 21, 22,
 	22, 23, 20,
 };
-int g_meshErrorVN = sizeof(g_meshErrorVBO) / sizeof(vertex_t);
-int g_meshErrorIN = sizeof(g_meshErrorIBO) / sizeof(unsigned short);
+int g_meshErrorVN = sizeof(g_meshErrorVBO);
+int g_meshErrorIN = sizeof(g_meshErrorIBO);

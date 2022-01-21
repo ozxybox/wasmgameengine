@@ -54,6 +54,8 @@ set( SOURCES
 	"render/camera.h"
 	"render/camera.c"
 	"render/errorassets.c"
+	"render/vertex.h"
+	"render/vertex.c"
 
 # Environment
 	"environment/terrain.h"

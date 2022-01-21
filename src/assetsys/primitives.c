@@ -1,6 +1,8 @@
 #include "primitives.h"
-   
-static vertex_t s_cubeVbo[] =
+
+
+
+static vtxprim_t s_cubeVbo[] =
 {
 	// Top face
 	{{ 1, 1,-1}, { 0, 1, 0}, {1,0}},
@@ -67,7 +69,7 @@ static unsigned short s_cubeIbo[] =
 	22, 23, 20,
 };
 
-static vertex_t s_skyVbo[] =
+static vtxprim_t s_skyVbo[] =
 {
 	// Top face
 	{{ 1, 1,-1}, { 0,-1, 0}, {1.0f/4.0f,     0.0f}},
@@ -139,8 +141,15 @@ static mesh_t s_primSkyMesh = MESH_INVALID_INDEX;
 
 void primitive_systemInit()
 {
-    s_primCubeMesh = mesh_loadFromArray(s_cubeVbo, sizeof(s_cubeVbo) / sizeof(vertex_t), s_cubeIbo, sizeof(s_cubeIbo) / sizeof(unsigned short));
-    s_primSkyMesh = mesh_loadFromArray(s_skyVbo, sizeof(s_skyVbo) / sizeof(vertex_t), s_skyIbo, sizeof(s_skyIbo) / sizeof(unsigned short));
+	vtxbuf_t vbo;
+    idxbuf_t ibo;
+	vtxbuf_reflect(VTXPRIM_FORMAT, s_cubeVbo, sizeof(s_cubeVbo), &vbo);
+	idxbuf_reflect(s_cubeIbo, sizeof(s_cubeIbo), &ibo);
+	s_primCubeMesh = mesh_loadFromArray(&vbo, &ibo);
+
+	vtxbuf_reflect(VTXPRIM_FORMAT, s_skyVbo, sizeof(s_skyVbo), &vbo);
+	idxbuf_reflect(s_skyIbo, sizeof(s_skyIbo), &ibo);
+	s_primSkyMesh = mesh_loadFromArray(&vbo, &ibo);
 
 }
 
@@ -153,17 +162,4 @@ mesh_t skyMesh()
 {
     return s_primSkyMesh;
 }
-
-
-
-/*
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    const float pos[] = 
-    { -1, 0, 0,  0, 1,
-       1, 0, 0,  1, 1,
-      -1, 1, 0,  0, 0,
-       1, 1, 0,  1, 0
-        };
-*/
 

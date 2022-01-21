@@ -122,6 +122,7 @@ static void createProgram(shaderInfo_t* info, GLuint vertexShader, GLuint fragme
     glBindAttribLocation(program, 0, "a_pos");
     glBindAttribLocation(program, 1, "a_norm");
     glBindAttribLocation(program, 2, "a_uv");
+    glBindAttribLocation(program, 3, "a_color");
     glLinkProgram(program);
     //checkError(program);
     

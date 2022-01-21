@@ -117,7 +117,10 @@ static void buildAsset(assetLoadInfo_t* ainf)
     else if(ainf->assetclass == ASSET_CLASS_MODEL)
     {
         meshBufferData_t* dat = ainf->arrivedData;
-        mesh_loadIntoFromArray(ainf->id, dat->vertices, dat->vertexCount, dat->indices, dat->elementCount);
+        
+        mesh_loadIntoFromArray(ainf->id, &dat->vertices, &dat->indices);
+        vtxbuf_free(&dat->vertices);
+        idxbuf_free(&dat->indices);
     }
     else if(ainf->assetclass == ASSET_CLASS_SHADER)
     {

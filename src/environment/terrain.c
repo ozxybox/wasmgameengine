@@ -238,7 +238,7 @@ static unsigned short s_tileIBO[] =
 
 
 
-vertex_t s_tileVerts[] = {
+vtxprim_t s_tileVerts[] = {
     {
         .pos = {-1, 0, -1},
         .uv  = { 0, 0},
@@ -276,7 +276,7 @@ typedef struct {
 
 
 
-void tileDataToMesh(int id, vertex_t* vbo, coltri_t* colOut, float xoff, float zoff, float yoff)
+void tileDataToMesh(int id, vtxprim_t* vbo, coltri_t* colOut, float xoff, float zoff, float yoff)
 {
     tileData_t* dat = &s_tileData[id];
     int* weights = dat;
@@ -294,7 +294,7 @@ void tileDataToMesh(int id, vertex_t* vbo, coltri_t* colOut, float xoff, float z
         for(int k = 0; k < 3; k++) // For each weight
         {
             int t = s_tileIBO[i*3+k];
-            vertex_t v = s_tileVerts[t];
+            vtxprim_t v = s_tileVerts[t];
             v.pos.y = (weights[t] + yoff) / 3.0f;
             v.pos.x += xoff;
             v.pos.z += zoff;
@@ -323,13 +323,17 @@ void tileDataToMesh(int id, vertex_t* vbo, coltri_t* colOut, float xoff, float z
 mesh_t loadTerrain(int width, int height, int* terrain, coltile_t** colmesh, int* triCountOut)
 {
     int vertCount = 4 /*tris*/ * 3 /*verts*/ * width * height;
-    vertex_t* vbo = malloc(sizeof(vertex_t) * vertCount);
-    unsigned short* ibo = malloc(sizeof(unsigned short) * vertCount);
+
+    vtxbuf_t vbuf;
+    vtxbuf_alloc(VTXPRIM_FORMAT, vertCount, &vbuf);
+
+    idxbuf_t ibuf;
+    idxbuf_alloc(vertCount, &ibuf);
+
     *triCountOut = 4 * width * height;
     *colmesh = malloc(sizeof(coltile_t) * width * height);
 
     coltile_t* tilecol = *colmesh;
-    vertex_t* tilevbo = vbo;
     for(int y = 0; y < height; y++)
     {
         for(int x = 0; x < width; x++)
@@ -337,9 +341,11 @@ mesh_t loadTerrain(int width, int height, int* terrain, coltile_t** colmesh, int
             int* p = &terrain[(y*width+x)*2];
             int tile = p[0];
             int yoff = p[1] * 2;
+
+            vtxprim_t* tilevbo = vtxbuf_gorge(&vbuf, 12);
             if(tile >= 0) 
                 tileDataToMesh(tile, tilevbo, tilecol->tris, x*2-width+1, y*2-height+1, yoff);
-            tilevbo += 12;
+
             tilecol->bounds.mins = (vec3){x*2-width, 0, y*2-height};
             tilecol->bounds.maxs = (vec3){x*2-width+2, 0, y*2-height+2};
             tilecol++;
@@ -347,13 +353,14 @@ mesh_t loadTerrain(int width, int height, int* terrain, coltile_t** colmesh, int
     }
 
     // Fill with tris
+    unsigned short* ibo = idxbuf_gorge(&ibuf, vertCount);
     for(int i = 0; i < vertCount; i++)
         ibo[i] = i;
 
-    mesh_t m = mesh_loadFromArray( vbo, vertCount, ibo, vertCount);
+    mesh_t m = mesh_loadFromArray(&vbuf, &ibuf);
 
-    free(vbo);
-    free(ibo);
+    vtxbuf_free(&vbuf);
+    idxbuf_free(&ibuf);
     
     logError("New tile %u", m);
     return m;

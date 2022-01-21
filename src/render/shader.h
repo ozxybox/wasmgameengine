@@ -1,5 +1,8 @@
 #pragma once
 
+#define SHADER_INVALID_INDEX 0xFFFFFFFF 
+typedef unsigned int shader_t;
+
 enum SHADER_UNIFORM
 {
     SHADER_UNIFORM_MODEL,
@@ -12,8 +15,7 @@ enum SHADER_UNIFORM
     SHADER_UNIFORM_COLOR,
 };
 
-#define SHADER_INVALID_INDEX 0xFFFFFFFF 
-typedef unsigned int shader_t;
+
 
 void shader_systemInit();
 void shader_systemShutdown();

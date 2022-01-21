@@ -55,8 +55,10 @@ meshBufferData_t loadMeshDataFromObj(const unsigned char* obj, unsigned int size
             elements += mesh->faces[i].vertexCount - 2;
         elements *= 3;
 
-        unsigned short* indices = malloc(sizeof(unsigned short) * elements);
-        unsigned short* idx = indices;
+        
+        idxbuf_t indices;
+        idxbuf_alloc(elements, &indices);
+        unsigned short* idx = indices.ibo;
         unsigned int curele = 0;
         for(int i = 0; i < mesh->faceCount; i++)
         {
@@ -70,18 +72,25 @@ meshBufferData_t loadMeshDataFromObj(const unsigned char* obj, unsigned int size
             }
             curele += face->vertexCount;
         }
+        indices.used = curele;
         
-        vertex_t* vertices = malloc(sizeof(vertex_t) * curele);
-        vertex_t* vtx = vertices;
+        vtxbuf_t vertices;
+        vtxformat_t fmt = VTX_POSITION | VTX_NORMAL | VTX_TEXCOORD;
+        vtxbuf_alloc(fmt, curele, &vertices);
         for(int i = 0; i < mesh->faceCount; i++)
         {
             objface_t* face = mesh->faces + i;
             for(int k = 0; k < face->vertexCount; k++)
-                *vtx++ = (vertex_t){.pos = model.verts[face->vertices[k].vertex], .norm = model.norms[face->vertices[k].normal], .uv = model.uvs[face->vertices[k].uv]}; 
+            {
+                vertex_t* v = vtxbuf_eat(&vertices); 
+                *vtx_pos (fmt, v) = model.verts[face->vertices[k].vertex];
+                *vtx_norm(fmt, v) = model.norms[face->vertices[k].normal];
+                *vtx_uv  (fmt, v) = model.uvs  [face->vertices[k].uv    ];
+            }
         }
         //logInfo("MODEL %d %d", curele, elements);
 
-        meshes[meshidx] = (meshBufferData_t){vertices, curele, indices, elements};
+        meshes[meshidx] = (meshBufferData_t){vertices, indices};
     }
 
     freeOBJ(&model);

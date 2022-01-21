@@ -125,7 +125,7 @@ void prop_drawData(propData_t* data)
     
     // Transformation
     mat4x4 model;
-    transform_matrix(&data->transform, &model);
+    transform_toMatrix(&data->transform, &model);
     shader_set(SHADER_UNIFORM_MODEL, &model);
     //logInfo("p%d - %f %f %f", data - s_props, data->transform.scale.x, data->transform.scale.y, data->transform.scale.z);
     

@@ -6,7 +6,7 @@ transform_t transform()
     return (transform_t){{0,0,0}, {0,0,0}, {0,0,0}};
 }
 
-void transform_matrix(transform_t* transform, mat4x4* matrix)
+void transform_toMatrix(transform_t* transform, mat4x4* matrix)
 {
     mat4x4 mat, rot;
     identity4x4(&mat);

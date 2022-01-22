@@ -32,6 +32,8 @@ set( SOURCES
 	"math/mat4.c"
 	"math/transform.h"
 	"math/transform.c"
+	"math/geometry.h"
+	"math/geometry.c"
 
 	
 # Asset System

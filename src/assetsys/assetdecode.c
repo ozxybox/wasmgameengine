@@ -57,7 +57,7 @@ meshBufferData_t loadMeshDataFromObj(const unsigned char* obj, unsigned int size
 
         
         idxbuf_t indices;
-        idxbuf_alloc(elements, &indices);
+        idxbuf_alloc(&indices, elements);
         unsigned short* idx = indices.ibo;
         unsigned int curele = 0;
         for(int i = 0; i < mesh->faceCount; i++)
@@ -76,7 +76,7 @@ meshBufferData_t loadMeshDataFromObj(const unsigned char* obj, unsigned int size
         
         vtxbuf_t vertices;
         vtxformat_t fmt = VTX_POSITION | VTX_NORMAL | VTX_TEXCOORD;
-        vtxbuf_alloc(fmt, curele, &vertices);
+        vtxbuf_alloc(&vertices, fmt, curele);
         for(int i = 0; i < mesh->faceCount; i++)
         {
             objface_t* face = mesh->faces + i;

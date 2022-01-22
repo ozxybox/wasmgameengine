@@ -21,6 +21,7 @@ typedef struct {
     coltri_t tris[4];
     aabb_t bounds;
 } coltile_t;
+
 static int s_terrainWidth  = 8;
 static int s_terrainHeight = 9;
 static int s_terrainData[9*8][2] = {
@@ -76,6 +77,7 @@ typedef struct {
     int bottomleft;
     int bottomright;
 } tileData_t;
+
 
 
 static tileData_t s_tileData[] = {
@@ -322,10 +324,10 @@ mesh_t loadTerrain(int width, int height, int* terrain, coltile_t** colmesh, int
     int vertCount = 4 /*tris*/ * 3 /*verts*/ * width * height;
 
     vtxbuf_t vbuf;
-    vtxbuf_alloc(VTXPRIM_FORMAT, vertCount, &vbuf);
+    vtxbuf_alloc(&vbuf, VTXPRIM_FORMAT, vertCount);
 
     idxbuf_t ibuf;
-    idxbuf_alloc(vertCount, &ibuf);
+    idxbuf_alloc(&ibuf, vertCount);
 
     *triCountOut = 4 * width * height;
     *colmesh = malloc(sizeof(coltile_t) * width * height);

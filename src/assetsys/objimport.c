@@ -128,7 +128,7 @@ int LoadMtlString(char* content, mtlfile_t* mtl)
 			for (; *c && !IsEndLine(*c); c++);
 		}
 	}
-
+	return 0;
 }
 
 void decodeOBJ(const char* buf, unsigned int size, objmodel_t* out)

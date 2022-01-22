@@ -55,8 +55,11 @@ typedef struct vtxbuf_t
     unsigned int used;
 } vtxbuf_t;
 
-void vtxbuf_alloc(vtxformat_t format, unsigned int capacity, vtxbuf_t* out);
-void vtxbuf_free(vtxbuf_t* out);
+void vtxbuf_alloc(vtxbuf_t* vb, vtxformat_t format, unsigned int capacity);
+void vtxbuf_free(vtxbuf_t* vb);
+
+// Grow to fit at least this count
+void vtxbuf_fit(vtxbuf_t* vb, unsigned int count);
 
 // This acts more as a consuming function than anything else.
 // The first time it gets called, it returns the first vertex
@@ -68,12 +71,18 @@ void vtxbuf_free(vtxbuf_t* out);
 vertex_t* vtxbuf_eat(vtxbuf_t* vb);
 vertex_t* vtxbuf_gorge(vtxbuf_t* vb, unsigned int count); // eat many
 
+// Puts our current vertex back to the start
+// Does not free any memory
+void vtxbuf_reset(vtxbuf_t* vb);
+
 // Just shows the state of an existing array of vertices. Not to be freed! 
 void vtxbuf_reflect(vtxformat_t format, vertex_t* vbo, unsigned int size, vtxbuf_t* out);
 
 
 
 // Index buffer
+// Functionally the exact same as the vertex buffer, but for indices
+
 typedef struct idxbuf_t
 {
     unsigned short* ibo;
@@ -81,12 +90,15 @@ typedef struct idxbuf_t
     unsigned int used;
 } idxbuf_t;
 
-void idxbuf_alloc(unsigned int capacity, idxbuf_t* out);
-void idxbuf_free(idxbuf_t* out);
+void idxbuf_alloc(idxbuf_t* ib, unsigned int capacity);
+void idxbuf_free(idxbuf_t* ib);
+
+void idxbuf_fit(idxbuf_t* ib, unsigned int count);
 
 unsigned short* idxbuf_eat(idxbuf_t* ib);
 unsigned short* idxbuf_gorge(idxbuf_t* ib, unsigned int count); // eat many
 
+void idxbuf_reset(idxbuf_t* ib);
 
 // Just shows the state of an existing array of indices. Not to be freed! 
 void idxbuf_reflect(unsigned short* ibo, unsigned int size, idxbuf_t* out);

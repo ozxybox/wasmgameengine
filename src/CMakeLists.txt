@@ -27,6 +27,9 @@ set( SOURCES
 # Math util
 	"math/linalg.h"
 	"math/linalg.c"
+	"math/linalg_p.h"
+	"math/linalg_p.c"
+	"math/mat4.c"
 	"math/transform.h"
 	"math/transform.c"
 
